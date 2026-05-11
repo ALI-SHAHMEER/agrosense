@@ -14,10 +14,13 @@ def init_gee():
     global _initialized
     if _initialized:
         return
-    credentials = service_account.Credentials.from_service_account_file(
-        settings.GEE_KEY_FILE,
-        scopes=["https://www.googleapis.com/auth/earthengine"],
-    )
-    ee.Initialize(credentials, project="agrosense-495406")
-    _initialized = True
-    print("✅ GEE initialized successfully")
+    try:
+        credentials = service_account.Credentials.from_service_account_file(
+            settings.GEE_KEY_FILE,
+            scopes=["https://www.googleapis.com/auth/earthengine"],
+        )
+        ee.Initialize(credentials, project="agrosense-495406")
+        _initialized = True
+        print("✅ GEE initialized successfully")
+    except Exception as e:
+        print(f"⚠️  GEE initialization skipped: {e}")
