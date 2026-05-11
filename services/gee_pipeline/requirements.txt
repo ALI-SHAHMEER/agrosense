@@ -1,0 +1,13 @@
+# ============================================================
+# AgroSense GEE Pipeline — Python Dependencies
+# ============================================================
+earthengine-api==1.7.25
+google-cloud-storage==2.18.2
+numpy==1.26.4
+rasterio==1.3.11
+shapely==2.0.6
+geopandas==1.0.1
+pandas==2.2.3
+requests==2.32.3
+python-dotenv==1.0.1
+tqdm==4.66.5

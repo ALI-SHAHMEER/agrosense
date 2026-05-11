@@ -1,0 +1,90 @@
+# ── Environment & Secrets ────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets/
+infrastructure/keys/
+*.json
+!package.json
+!package-lock.json
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+
+# ── ML Models (large binary files) ───────────────────────────
+services/ml_models/saved_models/
+*.pkl
+*.h5
+*.pt
+*.pth
+*.onnx
+*.joblib
+
+# ── Data ─────────────────────────────────────────────────────
+*.tif
+*.tiff
+*.geojson
+*.shp
+*.dbf
+*.shx
+data/raw/
+data/processed/
+
+# ── Node.js ──────────────────────────────────────────────────
+node_modules/
+services/dashboard/dist/
+services/dashboard/build/
+.npm
+
+# ── Docker ───────────────────────────────────────────────────
+.docker/
+
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Testing & Coverage ───────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# ── Jupyter ──────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Terraform ────────────────────────────────────────────────
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.backup
+infrastructure/terraform/.terraform.lock.hcl
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/

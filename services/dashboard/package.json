@@ -1,0 +1,33 @@
+{
+  "name": "agrosense-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgroSense — Satellite-Based Crop Monitoring Dashboard",
+  "scripts": {
+    "dev":     "vite --host 0.0.0.0 --port 3000",
+    "build":   "vite build",
+    "preview": "vite preview",
+    "lint":    "eslint src --ext .js,.jsx --report-unused-disable-directives"
+  },
+  "dependencies": {
+    "react":              "^18.3.1",
+    "react-dom":          "^18.3.1",
+    "react-router-dom":   "^6.26.2",
+    "leaflet":            "^1.9.4",
+    "react-leaflet":      "^4.2.1",
+    "axios":              "^1.7.7",
+    "recharts":           "^2.12.7",
+    "zustand":            "^4.5.5",
+    "react-query":        "^3.39.3",
+    "date-fns":           "^3.6.0",
+    "clsx":               "^2.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite":                 "^5.4.8",
+    "eslint":               "^9.11.1",
+    "autoprefixer":         "^10.4.20",
+    "postcss":              "^8.4.47",
+    "tailwindcss":          "^3.4.13"
+  }
+}
