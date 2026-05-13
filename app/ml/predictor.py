@@ -145,8 +145,8 @@ def predict_vra_zone(indices: dict) -> dict:
 
 # ── 4. Yield Prediction ───────────────────────────────────────────────────────
 
-def predict_yield(indices: dict, growing_days: int = 120,
-                  rainfall_mm: float = 200, temp_celsius: float = 26) -> dict:
+def predict_yield(indices: dict, growing_days: int = 120, rainfall_mm: float = 200,
+                  temp_celsius: float = 26, crop_type: str = 'wheat') -> dict:
     """
     Predict crop yield in tons per hectare.
     Returns point estimate + 95% confidence interval.
@@ -155,15 +155,19 @@ def predict_yield(indices: dict, growing_days: int = 120,
     model  = bundle["model"]
     scaler = bundle["scaler"]
 
+    crop_map  = bundle.get("crop_map",
+                    {"wheat":0,"rice":1,"cotton":2,"sugarcane":3,"mango":4})
+    crop_enc  = float(crop_map.get(str(crop_type).lower(), 0))
     X = np.array([[
-        indices.get("ndvi",  0),
-        indices.get("ndvi",  0) + 0.1,   # approx ndvi_max
-        indices.get("evi",   0),
-        indices.get("ndre",  0),
-        indices.get("lai",   0),
-        growing_days,
-        rainfall_mm,
-        temp_celsius,
+        float(indices.get("ndvi",  0)),
+        float(indices.get("ndvi",  0)) + 0.1,
+        float(indices.get("evi",   0)),
+        float(indices.get("ndre",  0)),
+        float(indices.get("lai",   0)),
+        float(growing_days),
+        float(rainfall_mm),
+        float(temp_celsius),
+        crop_enc,
     ]])
     X_scaled     = scaler.transform(X)
     yield_pred   = float(model.predict(X_scaled)[0])

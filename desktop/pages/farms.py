@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QLineEdit, QTableWidget, QTableWidgetItem,
+    QPushButton, QLineEdit, QComboBox, QTableWidget, QTableWidgetItem,
     QHeaderView, QDialog, QMessageBox, QFrame
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
@@ -95,10 +95,23 @@ class AddFieldDialog(QDialog):
         l.addWidget(fid_lbl)
         self.inputs = {}
         for label, key, ph in [("Field Name","name","e.g. Field A"),
-                                ("Crop Type","crop_type","e.g. wheat"),
                                 ("Area (ha)","area_ha","e.g. 10")]:
             l.addWidget(mk_label(label, 12, "#374151", True))
             inp = mk_input(ph); l.addWidget(inp); self.inputs[key] = inp
+
+        l.addWidget(mk_label("Crop Type", 12, "#374151", True))
+        self.crop_combo = QComboBox()
+        self.crop_combo.addItems(["wheat", "rice", "cotton", "sugarcane", "mango"])
+        self.crop_combo.setFixedHeight(38)
+        self.crop_combo.setStyleSheet(f"""
+            QComboBox{{color:{T};background:{W};border:1.5px solid {B};border-radius:8px;
+                       padding:0 12px;font-size:13px;font-family:'Segoe UI';}}
+            QComboBox:focus{{border-color:{G};}}
+            QComboBox::drop-down{{border:none;width:28px;}}
+            QComboBox QAbstractItemView{{color:{T};background:{W};selection-background-color:{A};
+                                         border:1px solid {B};font-size:13px;}}
+        """)
+        l.addWidget(self.crop_combo)
         self.err = mk_label("", 12, R); self.err.hide(); l.addWidget(self.err)
         row = QHBoxLayout()
         cb = QPushButton("Cancel")
@@ -114,7 +127,7 @@ class AddFieldDialog(QDialog):
             result = api.create_field(
                 self.farm_id,
                 self.inputs["name"].text().strip(),
-                self.inputs["crop_type"].text().strip(),
+                self.crop_combo.currentText(),
                 self.inputs["area_ha"].text() or None)
             print(f"✅ Field created: {result}")
             self.created.emit(); self.accept()

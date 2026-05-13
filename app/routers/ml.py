@@ -227,8 +227,11 @@ def run_full_analysis(
         stress   = predict_crop_stress(indices)
         irrig    = predict_irrigation(indices, weather.model_dump())
         vra      = predict_vra_zone(indices)
-        yld      = predict_yield(indices, yield_params.growing_days,
-                                 yield_params.rainfall_mm, yield_params.temp_celsius)
+        yld      = predict_yield(indices,
+                                 growing_days=yield_params.growing_days,
+                                 rainfall_mm=yield_params.rainfall_mm,
+                                 temp_celsius=yield_params.temp_celsius,
+                                 crop_type=field.crop_type or "wheat")
         soil     = predict_soil(indices)
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
