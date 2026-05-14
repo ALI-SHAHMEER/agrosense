@@ -155,9 +155,11 @@ def train_yield():
     df = load_data("yield.csv")
 
     features = [
-        "ndvi_mean", "ndvi_max", "evi_mean", "ndre_mean", "lai_mean",
-        "growing_days", "rainfall_total_mm", "temp_mean_celsius",
+        "ndvi", "ndvi_max", "evi", "ndre", "lai",
+        "growing_days", "rainfall_mm", "temp_celsius", "crop_enc",
     ]
+    crop_map = {"wheat": 0, "rice": 1, "cotton": 2, "sugarcane": 3, "mango": 4}
+
     X = df[features].values
     y = df["yield_tha"].values
 
@@ -184,16 +186,25 @@ def train_yield():
     print(f"  RMSE: {rmse:.3f} t/ha")
     print(f"  R²:   {r2:.3f}")
 
-    # Feature importance
-    importances = dict(zip(features, model.feature_importances_))
-    top = sorted(importances.items(), key=lambda x: x[1], reverse=True)[:3]
-    print(f"  Top features: {top}")
+    # Per-crop accuracy check
+    if "crop_enc" in df.columns:
+        enc_to_crop = {v: k for k, v in crop_map.items()}
+        for enc, cname in enc_to_crop.items():
+            mask = df["crop_enc"] == enc
+            if mask.sum() == 0:
+                continue
+            Xi = scaler.transform(df.loc[mask, features].values)
+            yi = df.loc[mask, "yield_tha"].values
+            pi = model.predict(Xi)
+            print(f"  {cname:12s}: avg_pred={pi.mean():.2f}  avg_true={yi.mean():.2f}  R²={r2_score(yi, pi):.3f}")
 
     joblib.dump({
         "model":    model,
+        "models":   model,
         "scaler":   scaler,
         "features": features,
-        "version":  "1.0.0",
+        "crop_map": crop_map,
+        "version":  "2.0.0",
     }, MODELS_DIR / "yield.pkl")
     print("✅ Saved → models/yield.pkl")
 

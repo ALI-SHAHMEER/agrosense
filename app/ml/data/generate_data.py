@@ -25,45 +25,45 @@ def generate_crop_stress_data():
     labels = []
 
     for _ in range(N // 3):
-        # Healthy crops (NDVI > 0.5)
-        ndvi = np.random.uniform(0.5, 0.9)
+        # Healthy crops — Pakistan calibrated (NDVI 0.25–0.65)
+        ndvi = np.random.uniform(0.25, 0.65)
         data.append({
             "ndvi":     ndvi,
             "evi":      ndvi * np.random.uniform(0.6, 0.8),
-            "ndwi":     np.random.uniform(-0.1, 0.3),
-            "ndre":     np.random.uniform(0.3, 0.6),
-            "lai":      np.random.uniform(2.5, 6.0),
-            "ndvi_std": np.random.uniform(0.02, 0.08),
-            "ndvi_min": ndvi - np.random.uniform(0.1, 0.2),
-            "ndvi_max": ndvi + np.random.uniform(0.05, 0.15),
+            "ndwi":     np.random.uniform(-0.05, 0.25),
+            "ndre":     np.random.uniform(0.18, 0.50),
+            "lai":      np.random.uniform(2.0, 5.5),
+            "ndvi_std": np.random.uniform(0.02, 0.07),
+            "ndvi_min": ndvi - np.random.uniform(0.08, 0.18),
+            "ndvi_max": ndvi + np.random.uniform(0.05, 0.14),
         })
         labels.append(0)
 
-        # Stressed crops (NDVI 0.2–0.5)
-        ndvi = np.random.uniform(0.2, 0.5)
+        # Stressed crops — Pakistan calibrated (NDVI 0.10–0.25)
+        ndvi = np.random.uniform(0.10, 0.25)
         data.append({
             "ndvi":     ndvi,
-            "evi":      ndvi * np.random.uniform(0.5, 0.7),
-            "ndwi":     np.random.uniform(-0.3, 0.0),
-            "ndre":     np.random.uniform(0.1, 0.3),
-            "lai":      np.random.uniform(0.8, 2.5),
-            "ndvi_std": np.random.uniform(0.08, 0.15),
-            "ndvi_min": ndvi - np.random.uniform(0.15, 0.25),
-            "ndvi_max": ndvi + np.random.uniform(0.05, 0.12),
+            "evi":      ndvi * np.random.uniform(0.5, 0.70),
+            "ndwi":     np.random.uniform(-0.35, -0.05),
+            "ndre":     np.random.uniform(0.06, 0.20),
+            "lai":      np.random.uniform(0.5, 2.0),
+            "ndvi_std": np.random.uniform(0.07, 0.14),
+            "ndvi_min": ndvi - np.random.uniform(0.06, 0.12),
+            "ndvi_max": ndvi + np.random.uniform(0.04, 0.10),
         })
         labels.append(1)
 
-        # Diseased crops (NDVI < 0.2, irregular pattern)
-        ndvi = np.random.uniform(0.0, 0.2)
+        # Diseased crops — Pakistan calibrated (NDVI 0.02–0.10)
+        ndvi = np.random.uniform(0.02, 0.10)
         data.append({
             "ndvi":     ndvi,
             "evi":      ndvi * np.random.uniform(0.3, 0.6),
-            "ndwi":     np.random.uniform(-0.5, -0.1),
-            "ndre":     np.random.uniform(0.0, 0.15),
-            "lai":      np.random.uniform(0.1, 0.8),
-            "ndvi_std": np.random.uniform(0.12, 0.25),
-            "ndvi_min": max(0, ndvi - np.random.uniform(0.1, 0.2)),
-            "ndvi_max": ndvi + np.random.uniform(0.1, 0.3),
+            "ndwi":     np.random.uniform(-0.55, -0.20),
+            "ndre":     np.random.uniform(0.0, 0.08),
+            "lai":      np.random.uniform(0.05, 0.6),
+            "ndvi_std": np.random.uniform(0.10, 0.22),
+            "ndvi_min": max(0, ndvi - np.random.uniform(0.02, 0.08)),
+            "ndvi_max": ndvi + np.random.uniform(0.05, 0.18),
         })
         labels.append(2)
 
@@ -128,10 +128,11 @@ def generate_vra_data():
     data = []
     labels = []
 
+    # Pakistan-calibrated NDVI thresholds (real data mean=0.17, max=0.29)
     zones = [
-        dict(ndvi=(0.0,0.3),  ndre=(0.0,0.15), label=0),  # low
-        dict(ndvi=(0.3,0.55), ndre=(0.15,0.35),label=1),  # medium
-        dict(ndvi=(0.55,0.9), ndre=(0.35,0.6), label=2),  # high
+        dict(ndvi=(0.02, 0.12), ndre=(0.0,  0.08), label=0),  # low
+        dict(ndvi=(0.12, 0.22), ndre=(0.08, 0.20), label=1),  # medium
+        dict(ndvi=(0.22, 0.55), ndre=(0.20, 0.45), label=2),  # high
     ]
     for zone in zones:
         for _ in range(N // 3):
@@ -158,44 +159,57 @@ def generate_vra_data():
 # ── 4. Yield Prediction Dataset ───────────────────────────────────────────────
 def generate_yield_data():
     """
-    Features: ndvi_mean, ndvi_max, evi_mean, ndre_mean, lai_mean,
-              growing_days, rainfall_total_mm, temp_mean_celsius, area_ha
-    Target  : yield_tha (tons per hectare)
-    Based on wheat/rice yields for Pakistan (2-6 t/ha typical range)
+    Features: ndvi, ndvi_max, evi, ndre, lai, growing_days, rainfall_mm,
+              temp_celsius, crop_enc
+    Target  : yield_tha — Pakistan benchmark-calibrated per crop.
+
+    growing_days represents the satellite observation window (90-200 days),
+    so it has the same range across all crops.  crop_enc is the primary
+    yield-scale differentiator.
     """
+    # All crops share the same growing_days range (observation window),
+    # matching the real Sentinel-2 dataset (130–165 days).
+    crop_profiles = [
+        dict(enc=0, name="wheat",     base=3.1,  spread=0.70, ndvi=(0.10, 0.40), rain=(50,  200)),
+        dict(enc=1, name="rice",      base=4.1,  spread=0.80, ndvi=(0.14, 0.42), rain=(100, 400)),
+        dict(enc=2, name="cotton",    base=1.6,  spread=0.40, ndvi=(0.10, 0.38), rain=(30,  150)),
+        dict(enc=3, name="sugarcane", base=58.0, spread=9.0,  ndvi=(0.12, 0.42), rain=(80,  300)),
+        dict(enc=4, name="mango",     base=8.5,  spread=1.5,  ndvi=(0.15, 0.45), rain=(50,  200)),
+    ]
     data = []
-    for _ in range(N):
-        ndvi_mean  = np.random.uniform(0.2, 0.8)
-        ndvi_max   = ndvi_mean + np.random.uniform(0.05, 0.2)
-        evi_mean   = ndvi_mean * np.random.uniform(0.55, 0.75)
-        ndre_mean  = np.random.uniform(0.1, 0.5)
-        lai_mean   = ndvi_mean * np.random.uniform(4, 8)
-        grow_days  = np.random.randint(90, 150)
-        rain_mm    = np.random.uniform(50, 400)
-        temp_mean  = np.random.uniform(18, 35)
+    per_crop = N // len(crop_profiles)
+    for cp in crop_profiles:
+        for _ in range(per_crop):
+            ndvi      = np.random.uniform(*cp["ndvi"])
+            ndvi_max  = min(ndvi + np.random.uniform(0.04, 0.15), 0.70)
+            evi       = ndvi * np.random.uniform(0.55, 0.78)
+            ndre      = np.random.uniform(0.04, 0.35)
+            lai       = ndvi * np.random.uniform(3.5, 7.0)
+            grow_days = np.random.randint(100, 185)   # same range for all crops
+            rain_mm   = np.random.uniform(*cp["rain"])
+            temp      = np.random.uniform(18, 38)
 
-        # Yield formula based on agronomic relationships
-        base_yield = (
-            ndvi_mean * 4.5 +
-            ndre_mean * 2.0 +
-            (rain_mm / 200) * 0.8 +
-            np.random.normal(0, 0.3)
-        )
-        yield_tha = np.clip(base_yield, 0.5, 8.0)
+            # Yield = crop_base × quality_factor + noise
+            # quality_factor derived from NDVI relative to crop's ndvi range
+            ndvi_norm   = (ndvi - cp["ndvi"][0]) / (cp["ndvi"][1] - cp["ndvi"][0] + 1e-6)
+            quality     = 0.7 + 0.6 * ndvi_norm          # 0.70 … 1.30
+            yield_tha   = cp["base"] * quality + np.random.normal(0, cp["spread"] * 0.4)
+            yield_tha   = float(np.clip(yield_tha, cp["base"] * 0.5, cp["base"] * 1.6))
 
-        data.append({
-            "ndvi_mean":          round(ndvi_mean, 4),
-            "ndvi_max":           round(min(ndvi_max, 1.0), 4),
-            "evi_mean":           round(evi_mean, 4),
-            "ndre_mean":          round(ndre_mean, 4),
-            "lai_mean":           round(lai_mean, 4),
-            "growing_days":       grow_days,
-            "rainfall_total_mm":  round(rain_mm, 1),
-            "temp_mean_celsius":  round(temp_mean, 1),
-            "yield_tha":          round(yield_tha, 3),
-        })
+            data.append({
+                "ndvi":         round(ndvi, 4),
+                "ndvi_max":     round(ndvi_max, 4),
+                "evi":          round(evi, 4),
+                "ndre":         round(ndre, 4),
+                "lai":          round(lai, 4),
+                "growing_days": grow_days,
+                "rainfall_mm":  round(rain_mm, 1),
+                "temp_celsius": round(temp, 1),
+                "crop_enc":     float(cp["enc"]),
+                "yield_tha":    round(yield_tha, 3),
+            })
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data).sample(frac=1, random_state=42).reset_index(drop=True)
     df.to_csv(DATA_DIR / "yield.csv", index=False)
     print(f"✅ Yield dataset: {len(df)} samples → {DATA_DIR}/yield.csv")
     return df
