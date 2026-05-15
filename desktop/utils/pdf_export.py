@@ -100,7 +100,7 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True):
 
     # ── SUMMARY BANNER ────────────────────────────────────────────────────────
     ndvi_v=idx.get('ndvi') or 0
-    ndvi_status="🟢 Good" if ndvi_v>0.5 else "🟡 Moderate" if ndvi_v>0.3 else "🔴 Low"
+    ndvi_status="🟢 Good" if ndvi_v>0.25 else "🟡 Moderate" if ndvi_v>0.15 else "🔴 Low"
     irr_txt=irrig.get("recommendation","—").replace("_"," ").title()
     banner=Table([[
         Paragraph(f"<b>Health</b><br/><font size='14' color='{'#1a6b35' if pred=='Healthy' else '#dc2626' if pred=='Diseased' else '#d4a017'}'>{pred}</font>",
@@ -125,12 +125,12 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True):
     # ── 1. VEGETATION INDICES ─────────────────────────────────────────────────
     story.append(_h2("1. Vegetation Indices (Sentinel-2)"))
     rows=[["Index","Value","Threshold","Visual Bar","Status"]]
-    for name,key,good,warn in [("NDVI","ndvi",0.5,0.3),("EVI","evi",0.3,0.2),
-        ("NDWI","ndwi",0.0,-0.2),("NDRE","ndre",0.25,0.15),("LAI","lai",2.0,1.0)]:
+    for name,key,good,warn in [("NDVI","ndvi",0.25,0.15),("EVI","evi",0.18,0.10),
+        ("NDWI","ndwi",-0.20,-0.28),("NDRE","ndre",0.15,0.08),("LAI","lai",0.45,0.25)]:
         v=idx.get(key) or 0
         pct=min(1.0,max(0,(v-(-0.5))/(1.0-(-0.5))))
         filled=int(pct*25); bar="█"*filled+"-"*(25-filled)
-        st="✓ Good" if v>=good else "△ Monitor" if v>=warn else "✗ Low"
+        st="✓ Good" if v>=good else "~ Fair" if v>=warn else "✗ Low"
         rows.append([name,f"{v:.4f}",f">{warn:.2f}",bar,st])
     it=Table(rows,colWidths=[W*0.10,W*0.12,W*0.13,W*0.48,W*0.17])
     it.setStyle(TableStyle([
@@ -142,7 +142,29 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True):
         ("TOPPADDING",(0,0),(-1,-1),7),("BOTTOMPADDING",(0,0),(-1,-1),7),
         ("LEFTPADDING",(0,0),(-1,-1),8),
     ]))
-    story+=[it,Spacer(1,0.4*cm)]
+    story+=[it,Spacer(1,0.25*cm)]
+
+    # Index definitions
+    defs=[
+        ["NDVI","Normalized Difference Vegetation Index — measures green vegetation density and overall crop health. Higher = denser, healthier canopy."],
+        ["EVI", "Enhanced Vegetation Index — like NDVI but corrects for atmospheric haze and soil background. More reliable in dense or high-biomass crops."],
+        ["NDWI","Normalized Difference Water Index — measures water content in vegetation and soil. Less negative = better moisture; below −0.28 signals irrigation need."],
+        ["NDRE","Normalized Difference Red Edge — detects chlorophyll using Sentinel-2 red-edge band. Catches early nutrient stress before NDVI responds."],
+        ["LAI", "Leaf Area Index — total one-sided leaf area per unit ground area (m²/m²). Higher values mean a fuller, denser crop canopy."],
+        ["Status","✓ Good: index meets healthy target  |  ~ Fair: above critical threshold but worth watching  |  ✗ Low: below critical threshold, action may be needed"],
+    ]
+    dt=Table(defs,colWidths=[W*0.10,W*0.90])
+    dt.setStyle(TableStyle([
+        ("FONTNAME",(0,0),(0,-1),"Helvetica-Bold"),("FONTSIZE",(0,0),(-1,-1),7),
+        ("FONTNAME",(1,0),(1,-1),"Helvetica"),
+        ("TEXTCOLOR",(0,0),(0,-2),C_GREEN),
+        ("TEXTCOLOR",(0,-1),(0,-1),C_MUTED),("TEXTCOLOR",(1,-1),(1,-1),C_MUTED),
+        ("TOPPADDING",(0,0),(-1,-1),3),("BOTTOMPADDING",(0,0),(-1,-1),3),
+        ("LEFTPADDING",(0,0),(-1,-1),4),
+        ("LINEBELOW",(0,-1),(-1,-1),0.5,C_BORDER),
+        ("BACKGROUND",(0,-1),(-1,-1),C_LIGHT),
+    ]))
+    story+=[dt,Spacer(1,0.4*cm)]
 
     # ── 2. CROP HEALTH ────────────────────────────────────────────────────────
     story.append(_h2("2. Crop Health Assessment"))
