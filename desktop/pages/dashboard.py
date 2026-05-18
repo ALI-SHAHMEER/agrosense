@@ -44,18 +44,19 @@ class Worker(QThread):
 class PDFWorker(QThread):
     done = pyqtSignal(str)
     err  = pyqtSignal(str)
-    def __init__(self, data, path):
+    def __init__(self, data, path, language="en"):
         super().__init__()
-        self.data = data
-        self.path = path
+        self.data     = data
+        self.path     = path
+        self.language = language
     def run(self):
         import traceback, logging
         logging.basicConfig(filename='/tmp/agrosense_pdf.log', level=logging.DEBUG,
                             format='%(asctime)s %(levelname)s %(message)s')
         try:
-            logging.info('PDFWorker started, path=%s', self.path)
+            logging.info('PDFWorker started, path=%s lang=%s', self.path, self.language)
             from desktop.utils.pdf_export import generate_report
-            generate_report(self.data, self.path, include_bands=True)
+            generate_report(self.data, self.path, include_bands=True, language=self.language)
             logging.info('PDF generated OK')
             self.done.emit(self.path)
         except BaseException as e:
@@ -316,7 +317,7 @@ class DashboardPage(QWidget):
         self.pdf_btn.setEnabled(False)
         self.pdf_btn.setText(LM.tr("fetching_pdf"))
 
-        self._pdf_worker = PDFWorker(data, self._pdf_path)
+        self._pdf_worker = PDFWorker(data, self._pdf_path, language=LM.current_lang)
         self._pdf_worker.done.connect(self._on_pdf_done)
         self._pdf_worker.err.connect(self._on_pdf_err)
         self._pdf_worker.start()
