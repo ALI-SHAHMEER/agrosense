@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import desktop.api as api
+from desktop.i18n import LM
 
 T="#111827"; G="#1a6b35"; B="#e2e8e4"; W="#ffffff"; R="#dc2626"; M="#6b7280"
 
@@ -12,13 +13,11 @@ def inp(ph="", pw=False):
     i.setPlaceholderText(ph)
     i.setFixedHeight(42)
     if pw: i.setEchoMode(QLineEdit.EchoMode.Password)
-    i.setStyleSheet(f"QLineEdit{{color:{T};background:{W};border:1.5px solid {B};border-radius:9px;padding:0 14px;font-size:13px;font-family:'Segoe UI';}} QLineEdit:focus{{border-color:{G};}}")
+    i.setStyleSheet(
+        f"QLineEdit{{color:{T};background:{W};border:1.5px solid {B};"
+        f"border-radius:9px;padding:0 14px;font-size:13px;font-family:'Segoe UI';}}"
+        f"QLineEdit:focus{{border-color:{G};}}")
     return i
-
-def lbl(text, size=13, color="#374151", bold=False):
-    l = QLabel(text)
-    l.setStyleSheet(f"color:{color};font-size:{size}px;font-weight:{'700' if bold else '400'};background:transparent;font-family:'Segoe UI';")
-    return l
 
 
 class RegWorker(QThread):
@@ -40,9 +39,10 @@ class RegisterWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AgroSense — Register")
-        self.setFixedSize(460, 560)
-        self.setStyleSheet(f"background:#0b1f10;")
+        self.setFixedSize(460, 580)
+        self.setStyleSheet("background:#0b1f10;")
         self._build()
+        LM.language_changed.connect(self._retranslate)
 
     def _build(self):
         root = QVBoxLayout(self)
@@ -52,37 +52,59 @@ class RegisterWindow(QWidget):
         card.setStyleSheet(f"QFrame{{background:{W};border-radius:16px;}}")
         card.setFixedWidth(400)
         cl = QVBoxLayout(card)
-        cl.setContentsMargins(40,32,40,32)
+        cl.setContentsMargins(40, 32, 40, 32)
         cl.setSpacing(0)
 
-        cl.addWidget(lbl("Create Account", 22, T, True))
+        def lbl(text, size=13, color="#374151", bold=False):
+            l = QLabel(text)
+            l.setStyleSheet(
+                f"color:{color};font-size:{size}px;"
+                f"font-weight:{'700' if bold else '400'};"
+                f"background:transparent;font-family:'Segoe UI';")
+            return l
+
+        self.title_lbl = lbl(LM.tr("reg_title"), 22, T, True)
+        cl.addWidget(self.title_lbl)
         cl.addSpacing(4)
-        cl.addWidget(lbl("Start monitoring your crops", 13, M))
+        self.sub_lbl = lbl(LM.tr("reg_subtitle"), 13, M)
+        cl.addWidget(self.sub_lbl)
         cl.addSpacing(24)
 
         self.err = QLabel("")
-        self.err.setStyleSheet(f"color:{R};background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;font-size:12px;font-family:'Segoe UI';")
+        self.err.setStyleSheet(
+            f"color:{R};background:#fef2f2;border:1px solid #fecaca;"
+            f"border-radius:8px;padding:8px 12px;font-size:12px;font-family:'Segoe UI';")
         self.err.hide()
         cl.addWidget(self.err)
         cl.addSpacing(4)
 
-        self.inputs = {}
-        for label, key, ph, pw in [
-            ("Full Name",  "name",     "Ali Hassan",          False),
-            ("Email",      "email",    "ali@agrosense.pk",    False),
-            ("Password",   "password", "min 8 characters",    True),
-        ]:
-            cl.addWidget(lbl(label, 12, "#374151", True))
-            cl.addSpacing(4)
-            i = inp(ph, pw)
-            cl.addWidget(i)
-            cl.addSpacing(12)
-            self.inputs[key] = i
+        # Field labels (stored for retranslation)
+        self.name_lbl = lbl(LM.tr("reg_name_label"), 12, "#374151", True)
+        cl.addWidget(self.name_lbl)
+        cl.addSpacing(4)
+        self.name_in = inp("Ali Hassan")
+        cl.addWidget(self.name_in)
+        cl.addSpacing(12)
 
-        cl.addWidget(lbl("Role", 12, "#374151", True))
+        self.email_lbl = lbl(LM.tr("reg_email_label"), 12, "#374151", True)
+        cl.addWidget(self.email_lbl)
+        cl.addSpacing(4)
+        self.email_in = inp("ali@agrosense.pk")
+        cl.addWidget(self.email_in)
+        cl.addSpacing(12)
+
+        self.pw_lbl = lbl(LM.tr("reg_password_label"), 12, "#374151", True)
+        cl.addWidget(self.pw_lbl)
+        cl.addSpacing(4)
+        self.pw_in = inp(LM.tr("reg_password_ph"), pw=True)
+        cl.addWidget(self.pw_in)
+        cl.addSpacing(12)
+
+        self.role_lbl = lbl(LM.tr("reg_role_label"), 12, "#374151", True)
+        cl.addWidget(self.role_lbl)
         cl.addSpacing(4)
         self.role = QComboBox()
-        self.role.addItems(["farmer","analyst","admin"])
+        self.role.addItems(["farmer", "analyst", "admin"])
         self.role.setFixedHeight(42)
         self.role.setStyleSheet(f"""
             QComboBox{{color:{T};background:{W};border:1.5px solid {B};border-radius:9px;
@@ -94,7 +116,7 @@ class RegisterWindow(QWidget):
         cl.addWidget(self.role)
         cl.addSpacing(20)
 
-        self.btn = QPushButton("Create Account")
+        self.btn = QPushButton(LM.tr("reg_btn"))
         self.btn.setFixedHeight(46)
         self.btn.setStyleSheet(f"""
             QPushButton{{background:{G};color:white;border:none;border-radius:10px;
@@ -107,16 +129,28 @@ class RegisterWindow(QWidget):
 
         root.addWidget(card)
 
+    def _retranslate(self):
+        self.title_lbl.setText(LM.tr("reg_title"))
+        self.sub_lbl.setText(LM.tr("reg_subtitle"))
+        self.name_lbl.setText(LM.tr("reg_name_label"))
+        self.email_lbl.setText(LM.tr("reg_email_label"))
+        self.pw_lbl.setText(LM.tr("reg_password_label"))
+        self.pw_in.setPlaceholderText(LM.tr("reg_password_ph"))
+        self.role_lbl.setText(LM.tr("reg_role_label"))
+        if self.btn.isEnabled():
+            self.btn.setText(LM.tr("reg_btn"))
+
     def _register(self):
-        name  = self.inputs["name"].text().strip()
-        email = self.inputs["email"].text().strip()
-        pw    = self.inputs["password"].text()
+        name  = self.name_in.text().strip()
+        email = self.email_in.text().strip()
+        pw    = self.pw_in.text()
         role  = self.role.currentText()
         if not all([name, email, pw]):
-            self.err.setText("All fields are required")
-            self.err.show(); return
+            self.err.setText(LM.tr("reg_fields_required"))
+            self.err.show()
+            return
         self.btn.setEnabled(False)
-        self.btn.setText("Creating account...")
+        self.btn.setText(LM.tr("reg_creating"))
         self._w = RegWorker(name, email, pw, role)
         self._w.success.connect(self._ok)
         self._w.error.connect(self._fail)
@@ -124,13 +158,12 @@ class RegisterWindow(QWidget):
 
     def _ok(self):
         self.btn.setEnabled(True)
-        self.btn.setText("Create Account")
-        QMessageBox.information(self, "Success",
-            "Account created! You can now sign in.")
+        self.btn.setText(LM.tr("reg_btn"))
+        QMessageBox.information(self, "AgroSense", LM.tr("reg_success_msg"))
         self.close()
 
     def _fail(self, msg):
         self.btn.setEnabled(True)
-        self.btn.setText("Create Account")
-        self.err.setText(f"Error: {msg}")
+        self.btn.setText(LM.tr("reg_btn"))
+        self.err.setText(f"{LM.tr('reg_error_prefix')}: {msg}")
         self.err.show()
