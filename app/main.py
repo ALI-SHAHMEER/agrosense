@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, farms, fields, predictions
 from app.routers.imagery import router as imagery_router
 from app.routers.ml import router as ml_router
+from app.routers.weather import router as weather_router
 from app.services.gee_auth import init_gee
 
 app = FastAPI(
@@ -28,6 +29,7 @@ app.include_router(fields.router)
 app.include_router(predictions.router)
 app.include_router(imagery_router)
 app.include_router(ml_router)
+app.include_router(weather_router)
 
 @app.on_event("startup")
 def startup_event():
