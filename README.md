@@ -1,6 +1,6 @@
 # AgroSense — Satellite-Based AI Crop Monitoring System
 
-AgroSense is a full-stack agricultural intelligence platform built for Pakistani farmers. It pulls satellite imagery from Google Earth Engine, computes vegetation indices (NDVI, NDRE, EVI, NDWI, LAI), and runs ML models to detect crop stress, recommend irrigation, forecast yield, and assess soil health — all surfaced through a desktop app and REST API.
+AgroSense is a full-stack agricultural intelligence platform built for Pakistani farmers. It pulls satellite imagery from Google Earth Engine, computes vegetation indices (NDVI, NDRE, EVI, NDWI, LAI), and runs ML models to detect crop stress, recommend irrigation, forecast yield, and assess soil health — all surfaced through a desktop app and REST API. A built-in Smart Farming screen delivers 7-day weather forecasts, automated crop-protection alerts, and AI planting recommendations without needing to run a satellite analysis first.
 
 ---
 
@@ -23,12 +23,12 @@ ML Models (scikit-learn / XGBoost)
   │ Diseased        │                  │                  │              │
   └─────────────────┴──────────────────┴──────────────────┴──────────────┘
         │
-        ▼
-FastAPI Backend  ←→  PostgreSQL + PostGIS
-        │
-   ┌────┴────┐
-   │         │
-PyQt6      React
+        ▼                              Open-Meteo (free weather API)
+FastAPI Backend  ←→  PostgreSQL + PostGIS      │
+        │              ◄────────────────────────┘
+   ┌────┴────┐           Smart Farming: 7-day forecast
+   │         │           + rule-based alerts
+PyQt6      React         + planting recommendations
 Desktop    Dashboard
   App      (web)
 ```
@@ -45,7 +45,8 @@ Email alerts are sent via Gmail SMTP whenever a crop is detected as Stressed or 
 | Database | PostgreSQL 16 + PostGIS |
 | Satellite Pipeline | Google Earth Engine API (Sentinel-2, Landsat-8) |
 | ML Models | scikit-learn, XGBoost |
-| Desktop App | PyQt6 |
+| Weather Data | Open-Meteo (free, no API key required) |
+| Desktop App | PyQt6 (bilingual EN/UR, PDF export) |
 | Web Dashboard | React, Vite, Tailwind CSS |
 | Auth | JWT (python-jose), bcrypt (passlib) |
 | CI | GitHub Actions |
@@ -161,7 +162,8 @@ agrosense/
 │   │   ├── fields.py           # Field CRUD
 │   │   ├── imagery.py          # Satellite analysis endpoint
 │   │   ├── ml.py               # ML prediction endpoints
-│   │   └── predictions.py      # Prediction history
+│   │   ├── predictions.py      # Prediction history
+│   │   └── weather.py          # Smart Farming: forecast, alerts, planting rec
 │   ├── schemas/                # Pydantic request/response models
 │   ├── services/
 │   │   ├── gee_auth.py         # Google Earth Engine init
@@ -177,11 +179,19 @@ agrosense/
 ├── desktop/                    # PyQt6 desktop application
 │   ├── main.py                 # App entry point
 │   ├── api.py                  # HTTP client to backend API
+│   ├── i18n.py                 # EN/UR LanguageManager (live toggle)
 │   ├── windows/                # Login, register, main window
-│   ├── pages/                  # Dashboard, farms, imagery, analytics
+│   ├── pages/
+│   │   ├── dashboard.py        # Dashboard with top-stats and charts
+│   │   ├── farms.py            # Farm management
+│   │   ├── imagery.py          # Satellite analysis
+│   │   ├── analytics.py        # ML predictions & history
+│   │   ├── map_view.py         # Field map viewer
+│   │   ├── band_view.py        # Spectral band viewer
+│   │   └── smart_farming.py    # Smart Farming: weather, alerts, planting rec
 │   └── utils/
 │       ├── email_alerts.py     # Gmail SMTP alert sender
-│       └── pdf_export.py       # PDF report generation
+│       └── pdf_export.py       # Bilingual PDF report generation (EN + UR)
 │
 ├── services/
 │   ├── api/                    # Standalone API service (Docker target)
@@ -195,7 +205,9 @@ agrosense/
 │       └── yield_prediction/
 │
 ├── alembic/                    # Database migrations
-├── tests/                      # pytest integration tests
+├── tests/                      # pytest test suite
+│   ├── test_api.py             # Integration tests (requires running server)
+│   └── test_weather.py         # Unit tests for Smart Farming pure functions
 ├── .env.example                # Environment variable template
 ├── environment.yml             # Conda environment definition
 └── Makefile                    # Dev shortcuts
@@ -219,6 +231,7 @@ agrosense/
 | POST | `/ml/crop-stress` | Crop stress prediction only |
 | POST | `/ml/irrigation` | Irrigation recommendation only |
 | POST | `/ml/yield` | Yield prediction only |
+| GET | `/weather/smart-farming/{field_id}` | 7-day forecast + alerts + planting rec |
 | GET | `/health` | API health check |
 
 Full interactive docs: **http://localhost:8000/docs**
@@ -237,15 +250,59 @@ Full interactive docs: **http://localhost:8000/docs**
 
 ---
 
+## Desktop App Features
+
+### Smart Farming
+
+The Smart Farming page (`desktop/pages/smart_farming.py`) provides a single screen for actionable field intelligence without requiring a satellite analysis first:
+
+- **7-day weather forecast** — condition icons, min/max temperature, rainfall, humidity, wind speed; data sourced from Open-Meteo (no API key required)
+- **Crop-protection alerts** — rule engine detects 7 alert types with severity levels:
+  | Alert | Trigger | Severity |
+  |---|---|---|
+  | Heatwave | >38 °C on 2+ consecutive days | High |
+  | Heavy rain | >25 mm in one day | High |
+  | Frost | <4 °C | High |
+  | Drought | <5 mm total + avg temp >30 °C | Medium |
+  | Strong wind | >40 km/h | Medium |
+  | Spray delay | Rain probability >60% (day 0 or 1) | Low |
+  | Fungal risk | Humidity >85% for 3+ consecutive days | Low |
+- **AI planting recommendation** — suitability score `= temp×0.4 + moisture×0.4 + risk×0.2`, ideal planting date (first day >0.7), and reasons list
+- **ML summary** — crop health, irrigation need, and yield forecast pulled from the latest satellite analysis (shown only when satellite imagery data exists for the field)
+- **Weekly summary** — aggregate stats for the 7-day window (avg temp, total rain, avg humidity, avg wind)
+
+### Bilingual Interface (EN / UR)
+
+A live language toggle switches the entire desktop UI between English and Urdu without restarting. All 31 Smart Farming keys and all other UI strings are defined in `desktop/i18n.py` via the `LanguageManager` singleton. Urdu text is right-to-left aligned automatically.
+
+### PDF Export
+
+`desktop/utils/pdf_export.py` generates bilingual PDF reports using ReportLab. Urdu text is pre-processed with `arabic_reshaper` + `python-bidi` and rendered with the NotoNaskhArabic font (which has static Presentation Form glyphs, making it compatible with ReportLab without OpenType shaping).
+
+---
+
 ## Running Tests
 
-Make sure the API is running (`uvicorn app.main:app --port 8000`), then:
+Unit tests (no server required):
 
 ```bash
-pytest tests/ -v
+conda run -n agrosense pytest tests/test_weather.py -v
 ```
 
-All 23 tests cover: auth flow, farm/field CRUD, satellite analysis, and all ML endpoints.
+Integration tests (requires running API):
+
+```bash
+uvicorn app.main:app --port 8000 &
+conda run -n agrosense pytest tests/test_api.py -v
+```
+
+Run everything:
+
+```bash
+conda run -n agrosense pytest tests/ -v
+```
+
+The test suite has **34+ tests** covering: auth flow, farm/field CRUD, satellite analysis, all ML endpoints, and Smart Farming pure functions (WMO weathercode mapping, all 7 alert types, planting recommendation scoring).
 
 ---
 
@@ -257,7 +314,7 @@ GitHub Actions runs the full test suite on every push and pull request to `main`
 2. Installs all Python dependencies
 3. Runs `alembic upgrade head`
 4. Starts the API with uvicorn
-5. Runs all 23 pytest tests
+5. Runs all pytest tests
 
 See `.github/workflows/ci.yml` for the full workflow.
 
