@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor
 import desktop.api as api
+from desktop.i18n import LM
 
 G="#1a6b35"; W="#ffffff"; P="#f4f6f4"; T="#111827"
 M="#6b7280"; B="#e2e8e4"; A="#e8f5ee"; R="#dc2626"; DB="#0b1f10"
@@ -38,34 +39,41 @@ class AddFarmDialog(QDialog):
     created = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Add Farm"); self.setFixedWidth(400)
-        self.setStyleSheet(f"background:{W};"); self._build()
+        self.setWindowTitle(LM.tr("add_farm_dialog_title"))
+        self.setFixedWidth(400)
+        self.setStyleSheet(f"background:{W};")
+        self._build()
 
     def _build(self):
         l = QVBoxLayout(self); l.setContentsMargins(28,24,28,24); l.setSpacing(10)
-        l.addWidget(mk_label("Add New Farm", 16, T, True))
+        l.addWidget(mk_label(LM.tr("add_farm_dialog_title"), 16, T, True))
         self.inputs = {}
-        for label, key, ph in [("Farm Name *","name","e.g. Sindh Farm 1"),
-                                ("District","district","e.g. Hyderabad"),
-                                ("Province","province","e.g. Sindh"),
-                                ("Area (ha)","area_ha","e.g. 50"),
-                                ("Latitude","latitude","e.g. 25.396"),
-                                ("Longitude","longitude","e.g. 68.374")]:
-            l.addWidget(mk_label(label, 12, "#374151", True))
+        for label_key, key, ph in [
+            ("form_farm_name", "name",      "e.g. Sindh Farm 1"),
+            ("form_district",  "district",  "e.g. Hyderabad"),
+            ("form_province",  "province",  "e.g. Sindh"),
+            ("form_area_ha",   "area_ha",   "e.g. 50"),
+            ("form_latitude",  "latitude",  "e.g. 25.396"),
+            ("form_longitude", "longitude", "e.g. 68.374"),
+        ]:
+            l.addWidget(mk_label(LM.tr(label_key), 12, "#374151", True))
             inp = mk_input(ph); l.addWidget(inp); self.inputs[key] = inp
         self.err = mk_label("", 12, R); self.err.hide(); l.addWidget(self.err)
         row = QHBoxLayout()
-        cb = QPushButton("Cancel")
+        cb = QPushButton(LM.tr("cancel_btn"))
         cb.setStyleSheet(f"QPushButton{{background:{A};color:{G};border:1px solid #b8d8c4;border-radius:8px;padding:6px 14px;font-family:'Segoe UI';}}")
         cb.clicked.connect(self.reject)
-        self.sb = mk_btn("Add Farm"); self.sb.clicked.connect(self._save)
+        self.sb = mk_btn(LM.tr("add_farm_save_btn"))
+        self.sb.clicked.connect(self._save)
         row.addWidget(cb); row.addStretch(); row.addWidget(self.sb)
         l.addLayout(row)
 
     def _save(self):
         name = self.inputs["name"].text().strip()
-        if not name: self.err.setText("Farm name required"); self.err.show(); return
-        self.sb.setEnabled(False); self.sb.setText("Saving...")
+        if not name:
+            self.err.setText(LM.tr("form_farm_name") + " required")
+            self.err.show(); return
+        self.sb.setEnabled(False); self.sb.setText(LM.tr("saving_btn"))
         try:
             api.create_farm(name,
                 self.inputs["district"].text().strip(),
@@ -76,30 +84,30 @@ class AddFarmDialog(QDialog):
             self.created.emit(); self.accept()
         except Exception as e:
             self.err.setText(str(e)); self.err.show()
-            self.sb.setEnabled(True); self.sb.setText("Add Farm")
+            self.sb.setEnabled(True); self.sb.setText(LM.tr("add_farm_save_btn"))
 
 class AddFieldDialog(QDialog):
     created = pyqtSignal()
     def __init__(self, farm_id, farm_name, parent=None):
         super().__init__(parent)
         self.farm_id = farm_id
-        self.setWindowTitle(f"Add Field to {farm_name}")
+        self.setWindowTitle(f"{LM.tr('add_field_dialog_title')} — {farm_name}")
         self.setFixedWidth(400)
-        self.setStyleSheet(f"background:{W};"); self._build(farm_name)
+        self.setStyleSheet(f"background:{W};")
+        self._build(farm_name)
 
     def _build(self, farm_name):
         l = QVBoxLayout(self); l.setContentsMargins(28,24,28,24); l.setSpacing(10)
-        l.addWidget(mk_label(f"Add Field to {farm_name}", 14, T, True))
-        # Show farm_id for debugging
-        fid_lbl = mk_label(f"Farm ID: {self.farm_id[:8]}...", 10, M)
-        l.addWidget(fid_lbl)
+        l.addWidget(mk_label(f"{LM.tr('add_field_dialog_title')} — {farm_name}", 14, T, True))
         self.inputs = {}
-        for label, key, ph in [("Field Name","name","e.g. Field A"),
-                                ("Area (ha)","area_ha","e.g. 10")]:
-            l.addWidget(mk_label(label, 12, "#374151", True))
+        for label_key, key, ph in [
+            ("form_field_name", "name",    "e.g. Field A"),
+            ("form_area_ha",    "area_ha", "e.g. 10"),
+        ]:
+            l.addWidget(mk_label(LM.tr(label_key), 12, "#374151", True))
             inp = mk_input(ph); l.addWidget(inp); self.inputs[key] = inp
 
-        l.addWidget(mk_label("Crop Type", 12, "#374151", True))
+        l.addWidget(mk_label(LM.tr("form_crop_type"), 12, "#374151", True))
         self.crop_combo = QComboBox()
         self.crop_combo.addItems(["wheat", "rice", "cotton", "sugarcane", "mango"])
         self.crop_combo.setFixedHeight(38)
@@ -114,15 +122,16 @@ class AddFieldDialog(QDialog):
         l.addWidget(self.crop_combo)
         self.err = mk_label("", 12, R); self.err.hide(); l.addWidget(self.err)
         row = QHBoxLayout()
-        cb = QPushButton("Cancel")
+        cb = QPushButton(LM.tr("cancel_btn"))
         cb.setStyleSheet(f"QPushButton{{background:{A};color:{G};border:1px solid #b8d8c4;border-radius:8px;padding:6px 14px;font-family:'Segoe UI';}}")
         cb.clicked.connect(self.reject)
-        self.sb = mk_btn("Add Field"); self.sb.clicked.connect(self._save)
+        self.sb = mk_btn(LM.tr("add_field_save_btn"))
+        self.sb.clicked.connect(self._save)
         row.addWidget(cb); row.addStretch(); row.addWidget(self.sb)
         l.addLayout(row)
 
     def _save(self):
-        self.sb.setEnabled(False); self.sb.setText("Saving...")
+        self.sb.setEnabled(False); self.sb.setText(LM.tr("saving_btn"))
         try:
             result = api.create_field(
                 self.farm_id,
@@ -133,7 +142,7 @@ class AddFieldDialog(QDialog):
             self.created.emit(); self.accept()
         except Exception as e:
             self.err.setText(str(e)); self.err.show()
-            self.sb.setEnabled(True); self.sb.setText("Add Field")
+            self.sb.setEnabled(True); self.sb.setText(LM.tr("add_field_save_btn"))
 
 class FarmsPage(QWidget):
     def __init__(self):
@@ -145,25 +154,35 @@ class FarmsPage(QWidget):
         self._workers = []
         self._build()
         self._load_farms()
+        LM.language_changed.connect(self._retranslate)
 
     def _build(self):
         l = QVBoxLayout(self); l.setContentsMargins(0,0,0,0); l.setSpacing(14)
 
-        # Header
+        # Header row
         hr = QHBoxLayout(); hr.addStretch()
-        add_btn = mk_btn("+ Add Farm", w=120)
+        add_btn = mk_btn(LM.tr("add_farm_btn"), w=140)
         add_btn.clicked.connect(self._add_farm)
-        hr.addWidget(add_btn); l.addLayout(hr)
+        hr.addWidget(add_btn)
+        self.del_farm_btn = mk_btn(LM.tr("del_farm_btn"), color=R, w=160)
+        self.del_farm_btn.setEnabled(False)
+        self.del_farm_btn.clicked.connect(
+            lambda: self._del_farm(self._selected_farm_id))
+        hr.addWidget(self.del_farm_btn)
+        l.addLayout(hr)
 
         # Selected farm indicator
-        self.sel_lbl = QLabel("No farm selected — click a row below")
+        self.sel_lbl = QLabel(LM.tr("no_farm_selected"))
         self.sel_lbl.setStyleSheet(f"color:{M};font-size:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 14px;font-family:'Segoe UI';")
         l.addWidget(self.sel_lbl)
 
         # Farms table
         self.farm_tbl = QTableWidget()
         self.farm_tbl.setColumnCount(4)
-        self.farm_tbl.setHorizontalHeaderLabels(["Farm Name","District","Province","Area (ha)"])
+        self.farm_tbl.setHorizontalHeaderLabels([
+            LM.tr("farm_tbl_name"), LM.tr("farm_tbl_district"),
+            LM.tr("farm_tbl_province"), LM.tr("farm_tbl_area"),
+        ])
         self.farm_tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.farm_tbl.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.farm_tbl.verticalHeader().setVisible(False)
@@ -182,16 +201,21 @@ class FarmsPage(QWidget):
 
         # Fields section
         fhr = QHBoxLayout()
-        fhr.addWidget(mk_label("Fields", 14, T, True))
+        self.fields_section_lbl = mk_label(LM.tr("fields_section"), 14, T, True)
+        fhr.addWidget(self.fields_section_lbl)
         fhr.addStretch()
-        self.add_field_btn = mk_btn("+ Add Field", w=130)
+        self.add_field_btn = mk_btn(LM.tr("add_field_btn"), w=130)
         self.add_field_btn.setEnabled(False)
         self.add_field_btn.clicked.connect(self._add_field)
-        fhr.addWidget(self.add_field_btn); l.addLayout(fhr)
+        fhr.addWidget(self.add_field_btn)
+        l.addLayout(fhr)
 
         self.field_tbl = QTableWidget()
         self.field_tbl.setColumnCount(4)
-        self.field_tbl.setHorizontalHeaderLabels(["Field Name","Crop Type","Area (ha)","ID"])
+        self.field_tbl.setHorizontalHeaderLabels([
+            LM.tr("field_tbl_name"), LM.tr("field_tbl_crop"),
+            LM.tr("field_tbl_area"), LM.tr("field_tbl_id"),
+        ])
         self.field_tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.field_tbl.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.field_tbl.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -206,11 +230,25 @@ class FarmsPage(QWidget):
         """)
         l.addWidget(self.field_tbl)
 
+    def _retranslate(self):
+        self.fields_section_lbl.setText(LM.tr("fields_section"))
+        self.add_field_btn.setText(LM.tr("add_field_btn"))
+        self.del_farm_btn.setText(LM.tr("del_farm_btn"))
+        self.farm_tbl.setHorizontalHeaderLabels([
+            LM.tr("farm_tbl_name"), LM.tr("farm_tbl_district"),
+            LM.tr("farm_tbl_province"), LM.tr("farm_tbl_area"),
+        ])
+        self.field_tbl.setHorizontalHeaderLabels([
+            LM.tr("field_tbl_name"), LM.tr("field_tbl_crop"),
+            LM.tr("field_tbl_area"), LM.tr("field_tbl_id"),
+        ])
+
     def _load_farms(self):
         w = Worker(api.get_farms)
         self._workers.append(w)
         w.done.connect(self._on_farms_loaded)
         w.err.connect(lambda e: self.sel_lbl.setText(f"Error: {e}"))
+        w.finished.connect(lambda: self._workers.remove(w) if w in self._workers else None)
         w.start()
 
     def _on_farms_loaded(self, farms):
@@ -235,6 +273,7 @@ class FarmsPage(QWidget):
         self._selected_farm_id   = farm["id"]
         self._selected_farm_name = farm.get("name","Farm")
         self.add_field_btn.setEnabled(True)
+        self.del_farm_btn.setEnabled(True)
         self.sel_lbl.setStyleSheet(
             f"color:#15803d;font-size:12px;background:#f0fdf4;"
             f"border:1px solid #86efac;border-radius:8px;padding:8px 14px;font-family:'Segoe UI';")
@@ -245,6 +284,7 @@ class FarmsPage(QWidget):
         w = Worker(api.get_fields, farm_id)
         self._workers.append(w)
         w.done.connect(self._on_fields_loaded)
+        w.finished.connect(lambda: self._workers.remove(w) if w in self._workers else None)
         w.start()
 
     def _on_fields_loaded(self, fields):
@@ -264,16 +304,15 @@ class FarmsPage(QWidget):
 
     def _add_field(self):
         if not self._selected_farm_id:
-            QMessageBox.information(self, "No Farm Selected",
-                "Please click on a farm row to select it first.")
+            QMessageBox.information(self, LM.tr("no_farm_sel_title"), LM.tr("no_farm_sel_msg"))
             return
         d = AddFieldDialog(self._selected_farm_id, self._selected_farm_name, self)
         d.created.connect(lambda: self._load_fields(self._selected_farm_id))
         d.exec()
 
     def _del_farm(self, farm_id):
-        if QMessageBox.question(self, "Delete Farm",
-            "Delete this farm and all its fields?",
+        if QMessageBox.question(self, LM.tr("del_farm_dialog"),
+            LM.tr("del_farm_confirm"),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         ) == QMessageBox.StandardButton.Yes:
             try:
@@ -282,7 +321,8 @@ class FarmsPage(QWidget):
                     self._selected_farm_id = None
                     self._selected_farm_name = ""
                     self.add_field_btn.setEnabled(False)
+                    self.del_farm_btn.setEnabled(False)
                     self.field_tbl.setRowCount(0)
                 self._load_farms()
             except Exception as e:
-                QMessageBox.warning(self, "Error", str(e))
+                QMessageBox.warning(self, LM.tr("error_title"), str(e))
