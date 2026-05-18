@@ -69,19 +69,27 @@ class MainWindow(QMainWindow):
                 font-family: 'Segoe UI';
             }}
             QMessageBox QPushButton {{
-                background: #1a6b35;
-                color: #ffffff;
-                border: none;
-                border-radius: 7px;
-                padding: 6px 24px;
+                background: #f3f4f6;
+                color: #374151;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                padding: 6px 20px;
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 500;
                 font-family: 'Segoe UI';
                 min-width: 80px;
-                min-height: 32px;
+                min-height: 30px;
             }}
-            QMessageBox QPushButton:hover  {{ background: #145a2b; }}
-            QMessageBox QPushButton:pressed {{ background: #0f4520; }}
+            QMessageBox QPushButton:hover   {{ background: #e5e7eb; border-color: #9ca3af; }}
+            QMessageBox QPushButton:pressed {{ background: #d1d5db; }}
+            QMessageBox QPushButton:default {{
+                background: #1a6b35;
+                color: #ffffff;
+                border: 1px solid #145a2b;
+                font-weight: 600;
+            }}
+            QMessageBox QPushButton:default:hover   {{ background: #145a2b; border-color: #0f4520; }}
+            QMessageBox QPushButton:default:pressed {{ background: #0f4520; }}
 
             QDialog {{
                 background: #ffffff;
@@ -92,19 +100,27 @@ class MainWindow(QMainWindow):
                 font-family: 'Segoe UI';
             }}
             QDialog QPushButton {{
-                background: #1a6b35;
-                color: #ffffff;
-                border: none;
-                border-radius: 7px;
+                background: #f3f4f6;
+                color: #374151;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
                 padding: 6px 20px;
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 500;
                 font-family: 'Segoe UI';
                 min-width: 80px;
-                min-height: 32px;
+                min-height: 30px;
             }}
-            QDialog QPushButton:hover  {{ background: #145a2b; }}
-            QDialog QPushButton:pressed {{ background: #0f4520; }}
+            QDialog QPushButton:hover   {{ background: #e5e7eb; border-color: #9ca3af; }}
+            QDialog QPushButton:pressed {{ background: #d1d5db; }}
+            QDialog QPushButton:default {{
+                background: #1a6b35;
+                color: #ffffff;
+                border: 1px solid #145a2b;
+                font-weight: 600;
+            }}
+            QDialog QPushButton:default:hover   {{ background: #145a2b; border-color: #0f4520; }}
+            QDialog QPushButton:default:pressed {{ background: #0f4520; }}
         """)
         self.setCentralWidget(root_w)
         hl = QHBoxLayout(root_w)
