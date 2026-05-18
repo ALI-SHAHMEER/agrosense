@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal, QRect
 from PyQt6.QtGui import QPainter, QColor, QFont, QPen, QBrush
 from desktop.theme import *
 import desktop.api as api
+from desktop.i18n import LM
 
 
 class HistoryWorker(QThread):
@@ -108,6 +109,7 @@ class AnalyticsPage(QWidget):
         self.setStyleSheet(f"background:{PAPER};")
         self._build()
         self._load_farms()
+        LM.language_changed.connect(self._retranslate)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -150,8 +152,10 @@ class AnalyticsPage(QWidget):
         self.field_combo.setStyleSheet(combo_style)
         self.field_combo.currentIndexChanged.connect(self._on_field_changed)
 
-        sl.addWidget(lbl("Farm:")); sl.addWidget(self.farm_combo, 1)
-        sl.addWidget(lbl("Field:")); sl.addWidget(self.field_combo, 1)
+        self.farm_lbl = lbl(LM.tr("farm_label"))
+        self.field_lbl = lbl(LM.tr("field_label"))
+        sl.addWidget(self.farm_lbl); sl.addWidget(self.farm_combo, 1)
+        sl.addWidget(self.field_lbl); sl.addWidget(self.field_combo, 1)
         layout.addWidget(sel)
 
         # Charts row
@@ -179,13 +183,16 @@ class AnalyticsPage(QWidget):
         tbl_frame = QFrame()
         tbl_frame.setStyleSheet(f"QFrame{{background:{WHITE};border:1px solid {BORDER};border-radius:12px;}}")
         tl = QVBoxLayout(tbl_frame); tl.setContentsMargins(16,14,16,14); tl.setSpacing(10)
-        t_title = QLabel("📅  Index History")
-        t_title.setStyleSheet(f"font-size:13.5px;font-weight:600;color:{TEXT};background:transparent;font-family:'Segoe UI';")
-        tl.addWidget(t_title)
+        self.hist_title = QLabel(LM.tr("index_history_title"))
+        self.hist_title.setStyleSheet(
+            f"font-size:13.5px;font-weight:600;color:{TEXT};background:transparent;font-family:'Segoe UI';")
+        tl.addWidget(self.hist_title)
 
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["Date","NDVI","EVI","NDWI","NDRE","LAI"])
+        self.table.setHorizontalHeaderLabels([
+            LM.tr("tbl_date"), LM.tr("tbl_ndvi"), LM.tr("tbl_evi"),
+            LM.tr("tbl_ndwi"), LM.tr("tbl_ndre"), LM.tr("tbl_lai")])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
@@ -199,7 +206,7 @@ class AnalyticsPage(QWidget):
         tl.addWidget(self.table)
         layout.addWidget(tbl_frame)
 
-        self.status_lbl = QLabel("Select a farm and field to view analytics")
+        self.status_lbl = QLabel(LM.tr("select_farm_field_msg"))
         self.status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.status_lbl.setStyleSheet(f"color:{MUTED};font-size:13px;background:transparent;font-family:'Segoe UI';")
         layout.addWidget(self.status_lbl)
@@ -212,7 +219,7 @@ class AnalyticsPage(QWidget):
 
     def _populate_farms(self, farms):
         self.farm_combo.clear()
-        self.farm_combo.addItem("Select farm...", None)
+        self.farm_combo.addItem(LM.tr("select_farm_opt"), None)
         for f in farms:
             self.farm_combo.addItem(f["name"], f["id"])
 
@@ -226,7 +233,7 @@ class AnalyticsPage(QWidget):
 
     def _populate_fields(self, fields):
         self.field_combo.clear()
-        self.field_combo.addItem("Select field...", None)
+        self.field_combo.addItem(LM.tr("select_field_opt"), None)
         for f in fields:
             self.field_combo.addItem(f"{f.get('name','')} ({f.get('crop_type','')})", f["id"])
         self.field_combo.setEnabled(True)
@@ -234,14 +241,22 @@ class AnalyticsPage(QWidget):
     def _on_field_changed(self):
         field_id = self.field_combo.currentData()
         if not field_id: return
-        self.status_lbl.setText("Loading...")
+        self.status_lbl.setText(LM.tr("loading_txt"))
         self._hw = HistoryWorker(field_id)
         self._hw.done.connect(self._render)
         self._hw.start()
 
+    def _retranslate(self):
+        self.farm_lbl.setText(LM.tr("farm_label"))
+        self.field_lbl.setText(LM.tr("field_label"))
+        self.hist_title.setText(LM.tr("index_history_title"))
+        self.table.setHorizontalHeaderLabels([
+            LM.tr("tbl_date"), LM.tr("tbl_ndvi"), LM.tr("tbl_evi"),
+            LM.tr("tbl_ndwi"), LM.tr("tbl_ndre"), LM.tr("tbl_lai")])
+
     def _render(self, history):
         if not history:
-            self.status_lbl.setText("No history found. Run imagery analysis first.")
+            self.status_lbl.setText(LM.tr("no_history_msg"))
             return
         self.status_lbl.setText(f"{len(history)} data point(s)")
         rev = list(reversed(history))

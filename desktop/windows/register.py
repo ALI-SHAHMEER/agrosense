@@ -63,10 +63,10 @@ class RegisterWindow(QWidget):
                 f"background:transparent;font-family:'Segoe UI';")
             return l
 
-        self.title_lbl = lbl(LM.tr("reg_title"), 22, T, True)
+        self.title_lbl = lbl(LM.tr("create_account_title"), 22, T, True)
         cl.addWidget(self.title_lbl)
         cl.addSpacing(4)
-        self.sub_lbl = lbl(LM.tr("reg_subtitle"), 13, M)
+        self.sub_lbl = lbl(LM.tr("monitor_crops"), 13, M)
         cl.addWidget(self.sub_lbl)
         cl.addSpacing(24)
 
@@ -78,29 +78,28 @@ class RegisterWindow(QWidget):
         cl.addWidget(self.err)
         cl.addSpacing(4)
 
-        # Field labels (stored for retranslation)
-        self.name_lbl = lbl(LM.tr("reg_name_label"), 12, "#374151", True)
+        self.name_lbl = lbl(LM.tr("full_name_label"), 12, "#374151", True)
         cl.addWidget(self.name_lbl)
         cl.addSpacing(4)
         self.name_in = inp("Ali Hassan")
         cl.addWidget(self.name_in)
         cl.addSpacing(12)
 
-        self.email_lbl = lbl(LM.tr("reg_email_label"), 12, "#374151", True)
+        self.email_lbl = lbl(LM.tr("email_reg_label"), 12, "#374151", True)
         cl.addWidget(self.email_lbl)
         cl.addSpacing(4)
         self.email_in = inp("ali@agrosense.pk")
         cl.addWidget(self.email_in)
         cl.addSpacing(12)
 
-        self.pw_lbl = lbl(LM.tr("reg_password_label"), 12, "#374151", True)
+        self.pw_lbl = lbl(LM.tr("password_reg_label"), 12, "#374151", True)
         cl.addWidget(self.pw_lbl)
         cl.addSpacing(4)
         self.pw_in = inp(LM.tr("reg_password_ph"), pw=True)
         cl.addWidget(self.pw_in)
         cl.addSpacing(12)
 
-        self.role_lbl = lbl(LM.tr("reg_role_label"), 12, "#374151", True)
+        self.role_lbl = lbl(LM.tr("role_label"), 12, "#374151", True)
         cl.addWidget(self.role_lbl)
         cl.addSpacing(4)
         self.role = QComboBox()
@@ -116,7 +115,7 @@ class RegisterWindow(QWidget):
         cl.addWidget(self.role)
         cl.addSpacing(20)
 
-        self.btn = QPushButton(LM.tr("reg_btn"))
+        self.btn = QPushButton(LM.tr("create_account_btn"))
         self.btn.setFixedHeight(46)
         self.btn.setStyleSheet(f"""
             QPushButton{{background:{G};color:white;border:none;border-radius:10px;
@@ -130,15 +129,15 @@ class RegisterWindow(QWidget):
         root.addWidget(card)
 
     def _retranslate(self):
-        self.title_lbl.setText(LM.tr("reg_title"))
-        self.sub_lbl.setText(LM.tr("reg_subtitle"))
-        self.name_lbl.setText(LM.tr("reg_name_label"))
-        self.email_lbl.setText(LM.tr("reg_email_label"))
-        self.pw_lbl.setText(LM.tr("reg_password_label"))
+        self.title_lbl.setText(LM.tr("create_account_title"))
+        self.sub_lbl.setText(LM.tr("monitor_crops"))
+        self.name_lbl.setText(LM.tr("full_name_label"))
+        self.email_lbl.setText(LM.tr("email_reg_label"))
+        self.pw_lbl.setText(LM.tr("password_reg_label"))
         self.pw_in.setPlaceholderText(LM.tr("reg_password_ph"))
-        self.role_lbl.setText(LM.tr("reg_role_label"))
+        self.role_lbl.setText(LM.tr("role_label"))
         if self.btn.isEnabled():
-            self.btn.setText(LM.tr("reg_btn"))
+            self.btn.setText(LM.tr("create_account_btn"))
 
     def _register(self):
         name  = self.name_in.text().strip()
@@ -146,11 +145,11 @@ class RegisterWindow(QWidget):
         pw    = self.pw_in.text()
         role  = self.role.currentText()
         if not all([name, email, pw]):
-            self.err.setText(LM.tr("reg_fields_required"))
+            self.err.setText(LM.tr("all_fields_required"))
             self.err.show()
             return
         self.btn.setEnabled(False)
-        self.btn.setText(LM.tr("reg_creating"))
+        self.btn.setText(LM.tr("creating_account"))
         self._w = RegWorker(name, email, pw, role)
         self._w.success.connect(self._ok)
         self._w.error.connect(self._fail)
@@ -158,12 +157,12 @@ class RegisterWindow(QWidget):
 
     def _ok(self):
         self.btn.setEnabled(True)
-        self.btn.setText(LM.tr("reg_btn"))
+        self.btn.setText(LM.tr("create_account_btn"))
         QMessageBox.information(self, "AgroSense", LM.tr("reg_success_msg"))
         self.close()
 
     def _fail(self, msg):
         self.btn.setEnabled(True)
-        self.btn.setText(LM.tr("reg_btn"))
-        self.err.setText(f"{LM.tr('reg_error_prefix')}: {msg}")
+        self.btn.setText(LM.tr("create_account_btn"))
+        self.err.setText(f"{LM.tr('error_title')}: {msg}")
         self.err.show()

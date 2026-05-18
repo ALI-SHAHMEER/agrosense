@@ -132,6 +132,7 @@ STRINGS = {
     "reg_success_msg":        {"en": "Account created! You can now sign in.", "ur": "اکاؤنٹ بن گیا! اب داخل ہو سکتے ہیں۔"},
     "success_title":          {"en": "Success",                               "ur": "کامیابی"},
     "reg_window_title":       {"en": "AgroSense — Register",                  "ur": "ایگرو سینس — رجسٹریشن"},
+    "reg_password_ph":        {"en": "min 8 characters",                       "ur": "کم از کم 8 حروف"},
     # ── Table headers ─────────────────────────────────────────────────────────
     "tbl_date":               {"en": "Date",                                  "ur": "تاریخ"},
     "tbl_ndvi":               {"en": "NDVI",                                  "ur": "NDVI"},

@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDate
 from PyQt6.QtGui import QColor
 import desktop.api as api
+from desktop.i18n import LM
 
 G="#1a6b35"; W="#ffffff"; P="#f4f6f4"; T="#111827"
 M="#6b7280"; B="#e2e8e4"; A="#e8f5ee"; R="#dc2626"
@@ -52,6 +53,7 @@ class ImageryPage(QWidget):
         self.fields = []
         self._build()
         self._load_farms()
+        LM.language_changed.connect(self._retranslate)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -70,17 +72,20 @@ class ImageryPage(QWidget):
         cf = QFrame()
         cf.setStyleSheet(f"QFrame{{background:{W};border:1px solid {B};border-radius:12px;}}")
         cl = QVBoxLayout(cf); cl.setContentsMargins(20,16,20,16); cl.setSpacing(12)
-        cl.addWidget(lbl("📡  Configure Satellite Analysis", 14, T, True))
+        self.config_title = lbl(LM.tr("imagery_config"), 14, T, True)
+        cl.addWidget(self.config_title)
 
         # Farm + Field row
         r1 = QHBoxLayout(); r1.setSpacing(12)
-        r1.addWidget(lbl("Farm:", 12, M, True))
+        self.farm_lbl = lbl(LM.tr("farm_label"), 12, M, True)
+        r1.addWidget(self.farm_lbl)
         self.farm_combo = QComboBox()
         self.farm_combo.setFixedHeight(38)
         self.farm_combo.setStyleSheet(combo_style())
         self.farm_combo.currentIndexChanged.connect(self._on_farm)
         r1.addWidget(self.farm_combo, 1)
-        r1.addWidget(lbl("Field:", 12, M, True))
+        self.field_lbl = lbl(LM.tr("field_label"), 12, M, True)
+        r1.addWidget(self.field_lbl)
         self.field_combo = QComboBox()
         self.field_combo.setFixedHeight(38)
         self.field_combo.setEnabled(False)
@@ -90,17 +95,20 @@ class ImageryPage(QWidget):
 
         # Date + Cloud + Button row
         r2 = QHBoxLayout(); r2.setSpacing(12)
-        r2.addWidget(lbl("Start:", 12, M, True))
+        self.start_lbl = lbl(LM.tr("start_label"), 12, M, True)
+        r2.addWidget(self.start_lbl)
         self.start = QDateEdit(QDate(2024,1,1))
         self.start.setFixedHeight(38); self.start.setCalendarPopup(True)
         self.start.setStyleSheet(date_style())
         r2.addWidget(self.start)
-        r2.addWidget(lbl("End:", 12, M, True))
+        self.end_lbl = lbl(LM.tr("end_label"), 12, M, True)
+        r2.addWidget(self.end_lbl)
         self.end = QDateEdit(QDate(2024,3,1))
         self.end.setFixedHeight(38); self.end.setCalendarPopup(True)
         self.end.setStyleSheet(date_style())
         r2.addWidget(self.end)
-        r2.addWidget(lbl("Max Cloud:", 12, M, True))
+        self.cloud_lbl = lbl(LM.tr("max_cloud_label"), 12, M, True)
+        r2.addWidget(self.cloud_lbl)
         self.cloud = QDoubleSpinBox()
         self.cloud.setRange(0,100); self.cloud.setValue(30)
         self.cloud.setFixedHeight(38); self.cloud.setSuffix(" %")
@@ -108,7 +116,7 @@ class ImageryPage(QWidget):
         r2.addWidget(self.cloud)
         cl.addLayout(r2)
 
-        self.run_btn = QPushButton("🛰  Fetch & Analyse")
+        self.run_btn = QPushButton(LM.tr("fetch_analyse"))
         self.run_btn.setFixedHeight(42)
         self.run_btn.setStyleSheet(f"QPushButton{{background:{G};color:white;border:none;border-radius:9px;font-size:13px;font-weight:600;font-family:'Segoe UI';}} QPushButton:hover{{background:#145a2b;}} QPushButton:disabled{{background:#9ca3af;}}")
         self.run_btn.clicked.connect(self._run)
@@ -123,7 +131,8 @@ class ImageryPage(QWidget):
         self.res_f.setStyleSheet(f"QFrame{{background:{W};border:1px solid {B};border-radius:12px;}}")
         self.res_l = QVBoxLayout(self.res_f)
         self.res_l.setContentsMargins(20,16,20,16); self.res_l.setSpacing(10)
-        self.res_l.addWidget(lbl("📊  Latest Results", 14, T, True))
+        self.res_title = lbl(LM.tr("imagery_results_title"), 14, T, True)
+        self.res_l.addWidget(self.res_title)
         self.idx_row = QHBoxLayout(); self.idx_row.setSpacing(10)
         self.res_l.addLayout(self.idx_row)
         self.interp_lbl = lbl("", 13, T, wrap=True)
@@ -136,11 +145,14 @@ class ImageryPage(QWidget):
         hf = QFrame()
         hf.setStyleSheet(f"QFrame{{background:{W};border:1px solid {B};border-radius:12px;}}")
         hl = QVBoxLayout(hf); hl.setContentsMargins(20,16,20,16); hl.setSpacing(10)
-        hl.addWidget(lbl("📅  Index History", 14, T, True))
+        self.hist_title = lbl(LM.tr("index_history_title"), 14, T, True)
+        hl.addWidget(self.hist_title)
 
         self.hist = QTableWidget()
         self.hist.setColumnCount(6)
-        self.hist.setHorizontalHeaderLabels(["Date","NDVI","EVI","NDWI","NDRE","LAI"])
+        self.hist.setHorizontalHeaderLabels([
+            LM.tr("tbl_date"), LM.tr("tbl_ndvi"), LM.tr("tbl_evi"),
+            LM.tr("tbl_ndwi"), LM.tr("tbl_ndre"), LM.tr("tbl_lai")])
         self.hist.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.hist.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.hist.verticalHeader().setVisible(False)
@@ -171,7 +183,7 @@ class ImageryPage(QWidget):
     def _on_farms(self, farms):
         self.farms = farms
         self.farm_combo.clear()
-        self.farm_combo.addItem("Select farm...", None)
+        self.farm_combo.addItem(LM.tr("select_farm_opt"), None)
         for f in farms:
             self.farm_combo.addItem(f["name"], f["id"])
 
@@ -185,7 +197,7 @@ class ImageryPage(QWidget):
     def _on_fields(self, fields):
         self.fields = fields
         self.field_combo.clear()
-        self.field_combo.addItem("Select field...", None)
+        self.field_combo.addItem(LM.tr("select_field_opt"), None)
         for f in fields:
             self.field_combo.addItem(f"{f.get('name','')} ({f.get('crop_type','')})", f["id"])
         self.field_combo.setEnabled(True)
@@ -193,13 +205,13 @@ class ImageryPage(QWidget):
     def _run(self):
         fid = self.field_combo.currentData()
         if not fid:
-            self.status.setText("⚠  Please select a field")
+            self.status.setText(LM.tr("select_field_msg"))
             self.status.setStyleSheet(f"color:{R};font-size:12px;background:transparent;")
             return
         self.run_btn.setEnabled(False)
-        self.run_btn.setText("⏳  Fetching from GEE...")
+        self.run_btn.setText(LM.tr("fetching_gee_btn"))
         self.status.setStyleSheet(f"color:{M};font-size:12px;background:transparent;")
-        self.status.setText("Contacting Google Earth Engine...")
+        self.status.setText(LM.tr("gee_contact"))
 
         start = self.start.date().toString("yyyy-MM-dd")
         end   = self.end.date().toString("yyyy-MM-dd")
@@ -212,7 +224,7 @@ class ImageryPage(QWidget):
 
     def _on_result(self, d):
         self.run_btn.setEnabled(True)
-        self.run_btn.setText("🛰  Fetch & Analyse")
+        self.run_btn.setText(LM.tr("fetch_analyse"))
 
         if d.get("status") == "no_images":
             self.status.setStyleSheet(f"color:{GOLD};font-size:12px;background:transparent;")
@@ -231,9 +243,24 @@ class ImageryPage(QWidget):
 
     def _on_err(self, msg):
         self.run_btn.setEnabled(True)
-        self.run_btn.setText("🛰  Fetch & Analyse")
+        self.run_btn.setText(LM.tr("fetch_analyse"))
         self.status.setStyleSheet(f"color:{R};font-size:12px;background:transparent;")
         self.status.setText(f"❌  {msg}")
+
+    def _retranslate(self):
+        self.config_title.setText(LM.tr("imagery_config"))
+        self.farm_lbl.setText(LM.tr("farm_label"))
+        self.field_lbl.setText(LM.tr("field_label"))
+        self.start_lbl.setText(LM.tr("start_label"))
+        self.end_lbl.setText(LM.tr("end_label"))
+        self.cloud_lbl.setText(LM.tr("max_cloud_label"))
+        if self.run_btn.isEnabled():
+            self.run_btn.setText(LM.tr("fetch_analyse"))
+        self.res_title.setText(LM.tr("imagery_results_title"))
+        self.hist_title.setText(LM.tr("index_history_title"))
+        self.hist.setHorizontalHeaderLabels([
+            LM.tr("tbl_date"), LM.tr("tbl_ndvi"), LM.tr("tbl_evi"),
+            LM.tr("tbl_ndwi"), LM.tr("tbl_ndre"), LM.tr("tbl_lai")])
 
     def _show_results(self, d):
         # Clear index row

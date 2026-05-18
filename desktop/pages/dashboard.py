@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 import desktop.api as api
+from desktop.i18n import LM
 
 G="#1a6b35"; GB="#0d2414"; W="#ffffff"; P="#f4f6f4"
 T="#111827"; M="#6b7280"; B="#e2e8e4"; A="#e8f5ee"
@@ -71,6 +72,7 @@ class DashboardPage(QWidget):
         self._pdf_worker = None
         self._build()
         self._load()
+        LM.language_changed.connect(self._retranslate)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -87,24 +89,28 @@ class DashboardPage(QWidget):
 
         # Stats
         sr = QHBoxLayout(); sr.setSpacing(14)
-        stats = [("Total Farms","—",G),("Total Fields","—",BLUE),
-                 ("Crop Health","—",EMERALD),("Est. Yield","—",GOLD)]
+        stat_keys = ["stat_farms", "stat_fields", "stat_health", "stat_yield"]
+        stat_cols = [G, BLUE, EMERALD, GOLD]
         self._sv = []
-        for ltext, val, col in stats:
+        self._sl = []
+        for key, col in zip(stat_keys, stat_cols):
             f = QFrame()
             f.setFixedHeight(110)
             f.setStyleSheet(f"QFrame{{background:{W};border:1px solid {B};border-radius:12px;}}")
             fl = QVBoxLayout(f); fl.setContentsMargins(20,14,20,14)
-            fl.addWidget(lbl(ltext, 11, M))
-            v = lbl(val, 28, col, True)
+            sl = lbl(LM.tr(key), 11, M)
+            fl.addWidget(sl)
+            v = lbl("—", 28, col, True)
             fl.addWidget(v)
             self._sv.append(v)
+            self._sl.append((sl, key))
             sr.addWidget(f)
         ml.addLayout(sr)
 
         # Analysis panel
         af, al = card()
-        al.addWidget(lbl("🔬  Full Field Analysis", 14, T, True))
+        self.analysis_title_lbl = lbl(LM.tr("analysis_title"), 14, T, True)
+        al.addWidget(self.analysis_title_lbl)
         row = QHBoxLayout(); row.setSpacing(10)
         self.combo = QComboBox()
         self.combo.setFixedHeight(40)
@@ -118,7 +124,7 @@ class DashboardPage(QWidget):
             QComboBox QAbstractItemView::item:hover{{background:{A};color:{T};}}
         """)
         row.addWidget(self.combo, 1)
-        self.run_btn = btn("▶  Run Analysis")
+        self.run_btn = btn(LM.tr("run_analysis"))
         self.run_btn.setFixedWidth(160)
         self.run_btn.clicked.connect(self._run)
         row.addWidget(self.run_btn)
@@ -135,11 +141,10 @@ class DashboardPage(QWidget):
         al.addWidget(self.err_lbl)
         ml.addWidget(af)
 
-        # PDF button (persistent — never deleted)
-        self.pdf_btn = btn("📄  Export PDF (with satellite images)", BLUE, "#1d4ed8")
+        self.pdf_btn = btn(LM.tr("export_pdf"), BLUE, "#1d4ed8")
         self.pdf_btn.setEnabled(False)
         self.pdf_btn.clicked.connect(self._pdf_clicked)
-        self.alt_btn = btn("📧  Send Alert", PURPLE, "#6d28d9")
+        self.alt_btn = btn(LM.tr("send_alert"), PURPLE, "#6d28d9")
         self.alt_btn.setEnabled(False)
         self.alt_btn.clicked.connect(self._alert_clicked)
         action_row = QHBoxLayout()
@@ -188,7 +193,7 @@ class DashboardPage(QWidget):
         fid = self.combo.currentData()
         if not fid: return
         self.run_btn.setEnabled(False)
-        self.run_btn.setText("Analysing...")
+        self.run_btn.setText(LM.tr("analysing"))
         self.err_lbl.hide()
         w = Worker(api.full_analysis, fid)
         self._workers.append(w)
@@ -199,7 +204,7 @@ class DashboardPage(QWidget):
 
     def _on_result(self, d):
         self.run_btn.setEnabled(True)
-        self.run_btn.setText("▶  Run Analysis")
+        self.run_btn.setText(LM.tr("run_analysis"))
         # Store field_id and token for PDF
         d["field_id"]    = self.combo.currentData()
         d["_token"]      = api.get_token()
@@ -212,7 +217,7 @@ class DashboardPage(QWidget):
 
     def _on_err(self, msg):
         self.run_btn.setEnabled(True)
-        self.run_btn.setText("▶  Run Analysis")
+        self.run_btn.setText(LM.tr("run_analysis"))
         self.err_lbl.setText(f"⚠  {msg}")
         self.err_lbl.show()
 
@@ -285,9 +290,20 @@ class DashboardPage(QWidget):
         self._sv[3].setText(f"{yld.get('predicted_yield_tha',0):.1f} t/ha")
         self.res_f.show()
 
+    def _retranslate(self):
+        for sl, key in self._sl:
+            sl.setText(LM.tr(key))
+        self.analysis_title_lbl.setText(LM.tr("analysis_title"))
+        if self.run_btn.isEnabled():
+            self.run_btn.setText(LM.tr("run_analysis"))
+        if self.pdf_btn.isEnabled():
+            self.pdf_btn.setText(LM.tr("export_pdf"))
+        if self.alt_btn.isEnabled():
+            self.alt_btn.setText(LM.tr("send_alert"))
+
     def _pdf_clicked(self):
         if not self._last_d:
-            QMessageBox.information(self, "No Data", "Please run analysis first.")
+            QMessageBox.information(self, LM.tr("no_data_title"), LM.tr("run_analysis_first"))
             return
 
         import os, copy
@@ -298,7 +314,7 @@ class DashboardPage(QWidget):
         self._pdf_path = os.path.join(desk if os.path.exists(desk) else home, fname)
 
         self.pdf_btn.setEnabled(False)
-        self.pdf_btn.setText("⏳  Fetching bands & generating PDF...")
+        self.pdf_btn.setText(LM.tr("fetching_pdf"))
 
         self._pdf_worker = PDFWorker(data, self._pdf_path)
         self._pdf_worker.done.connect(self._on_pdf_done)
@@ -307,13 +323,13 @@ class DashboardPage(QWidget):
 
     def _on_pdf_done(self, p):
         self.pdf_btn.setEnabled(True)
-        self.pdf_btn.setText("📄  Export PDF (with satellite images)")
-        QMessageBox.information(self, "PDF Ready", f"✅ Report saved!\n\n{p}")
+        self.pdf_btn.setText(LM.tr("export_pdf"))
+        QMessageBox.information(self, LM.tr("pdf_ready_title"), f"✅ Report saved!\n\n{p}")
 
     def _on_pdf_err(self, e):
         self.pdf_btn.setEnabled(True)
-        self.pdf_btn.setText("📄  Export PDF (with satellite images)")
-        QMessageBox.warning(self, "PDF Error", f"❌ {e[:300]}")
+        self.pdf_btn.setText(LM.tr("export_pdf"))
+        QMessageBox.warning(self, LM.tr("pdf_error_title"), f"❌ {e[:300]}")
 
     def _alert_clicked(self):
         if not self._last_d:
@@ -323,7 +339,7 @@ class DashboardPage(QWidget):
             from desktop.utils.email_alerts import check_and_alert
             import os; from dotenv import load_dotenv; load_dotenv()
             r = check_and_alert(self._last_d, me, os.getenv("ADMIN_EMAIL",""))
-            QMessageBox.information(self, "Alert",
+            QMessageBox.information(self, LM.tr("alert_title"),
                 ("✅  " if r["success"] else "ℹ  ") + r["message"])
         except Exception as e:
-            QMessageBox.warning(self, "Alert Error", str(e))
+            QMessageBox.warning(self, LM.tr("alert_error_title"), str(e))

@@ -13,14 +13,14 @@ from desktop.pages.band_view import BandViewPage
 import desktop.api as api
 from desktop.i18n import LM
 
-# (key, i18n_key, icon, subtitle_i18n_key, PageClass)
+# (page_key, nav_i18n_key, subtitle_i18n_key, PageClass)
 NAV = [
-    ("dashboard", "nav_dashboard", "🏠",  "sub_dashboard", DashboardPage),
-    ("farms",     "nav_farms",     "🗺",  "sub_farms",     FarmsPage),
-    ("imagery",   "nav_imagery",   "🛰",  "sub_imagery",   ImageryPage),
-    ("analytics", "nav_analytics", "📊",  "sub_analytics", AnalyticsPage),
-    ("map",       "nav_map",       "🗺",  "sub_map",       MapPage),
-    ("bands",     "nav_bands",     "🛰",  "sub_bands",     BandViewPage),
+    ("dashboard", "nav_dashboard", "topbar_sub_dashboard", DashboardPage),
+    ("farms",     "nav_farms",     "topbar_sub_farms",     FarmsPage),
+    ("imagery",   "nav_imagery",   "topbar_sub_imagery",   ImageryPage),
+    ("analytics", "nav_analytics", "topbar_sub_analytics", AnalyticsPage),
+    ("map",       "nav_map",       "topbar_sub_map",       MapPage),
+    ("bands",     "nav_bands",     "topbar_sub_bands",     BandViewPage),
 ]
 
 G = "#1a6b35"; GB = "#0d2414"; W = "#ffffff"; P = "#f4f6f4"
@@ -71,7 +71,6 @@ class MainWindow(QMainWindow):
         vl.setContentsMargins(0, 0, 0, 0)
         vl.setSpacing(0)
 
-        # Logo
         logo = QWidget()
         logo.setFixedHeight(64)
         logo.setStyleSheet(
@@ -86,7 +85,7 @@ class MainWindow(QMainWindow):
         ll.addWidget(ic); ll.addWidget(nm); ll.addStretch()
         vl.addWidget(logo)
 
-        self.sec_lbl = QLabel(LM.tr("nav_menu_header"))
+        self.sec_lbl = QLabel(LM.tr("main_menu"))
         self.sec_lbl.setStyleSheet(
             "color:#3a6b4a; font-size:9px; font-weight:700; letter-spacing:2px;"
             "padding:14px 20px 6px; background:transparent;")
@@ -97,8 +96,8 @@ class MainWindow(QMainWindow):
         nl = QVBoxLayout(nav)
         nl.setContentsMargins(10, 0, 10, 8)
         nl.setSpacing(2)
-        for key, lbl_key, icon, _, Cls in NAV:
-            b = QPushButton(f"{icon}  {LM.tr(lbl_key)}")
+        for key, lbl_key, _, Cls in NAV:
+            b = QPushButton(LM.tr(lbl_key))
             b.setFixedHeight(40)
             b.setStyleSheet(self._ns(False))
             b.clicked.connect(lambda _, k=key: self._go(k))
@@ -112,7 +111,6 @@ class MainWindow(QMainWindow):
         div.setStyleSheet("background:rgba(255,255,255,0.08);")
         vl.addWidget(div)
 
-        # User info
         uw = QWidget()
         uw.setStyleSheet(f"background:{GB};")
         ul = QVBoxLayout(uw)
@@ -129,7 +127,7 @@ class MainWindow(QMainWindow):
             "color:#f0ede6; font-size:13px; font-weight:600; background:transparent;")
         em = QLabel(self.user.get("email", ""))
         em.setStyleSheet("color:#5a9470; font-size:10px; background:transparent;")
-        self.logout_btn = QPushButton(f"⎋  {LM.tr('signout_btn')}")
+        self.logout_btn = QPushButton(LM.tr("sign_out"))
         self.logout_btn.setStyleSheet(
             "QPushButton{background:transparent;border:none;color:#4a7a5a;"
             "font-size:11px;text-align:left;padding:4px 0;}"
@@ -148,7 +146,6 @@ class MainWindow(QMainWindow):
         cl.setContentsMargins(0, 0, 0, 0)
         cl.setSpacing(0)
 
-        # Topbar
         tb = QWidget()
         tb.setFixedHeight(54)
         tb.setStyleSheet(f"background:{W}; border-bottom:1px solid {B};")
@@ -157,11 +154,12 @@ class MainWindow(QMainWindow):
         self.tb_title = QLabel(LM.tr("nav_dashboard"))
         self.tb_title.setStyleSheet(
             f"color:{T}; font-size:15px; font-weight:600; background:transparent;")
-        self.tb_sub = QLabel(LM.tr("sub_dashboard"))
+        self.tb_sub = QLabel(LM.tr("topbar_sub_dashboard"))
         self.tb_sub.setStyleSheet(
             f"color:{M}; font-size:12px; background:transparent;")
-        self.dot_lbl = QLabel(f"● {LM.tr('status_connected')}")
-        self.dot_lbl.setStyleSheet("color:#16a34a; font-size:11px; background:transparent;")
+        self.dot_lbl = QLabel(LM.tr("connected"))
+        self.dot_lbl.setStyleSheet(
+            "color:#16a34a; font-size:11px; background:transparent;")
 
         self.lang_btn = QPushButton(LM.tr("lang_toggle"))
         self.lang_btn.setFixedHeight(28)
@@ -180,10 +178,9 @@ class MainWindow(QMainWindow):
         tl.addWidget(self.lang_btn)
         cl.addWidget(tb)
 
-        # Pages
         self.stack = QStackedWidget()
         self.stack.setStyleSheet(f"background:{P};")
-        for key, _, _, _, Cls in NAV:
+        for key, _, _, Cls in NAV:
             pg = Cls()
             wrap = QWidget()
             wrap.setStyleSheet(f"background:{P};")
@@ -209,7 +206,7 @@ class MainWindow(QMainWindow):
         self._current_key = key
         nav_entry = next((n for n in NAV if n[0] == key), None)
         if nav_entry:
-            _, lbl_key, icon, sub_key, _ = nav_entry
+            _, lbl_key, sub_key, _ = nav_entry
             self.tb_title.setText(LM.tr(lbl_key))
             self.tb_sub.setText(LM.tr(sub_key))
         if key in self._pages:
@@ -218,18 +215,16 @@ class MainWindow(QMainWindow):
             b.setStyleSheet(self._ns(k == key))
 
     def _retranslate(self):
-        self.sec_lbl.setText(LM.tr("nav_menu_header"))
+        self.sec_lbl.setText(LM.tr("main_menu"))
         self.lang_btn.setText(LM.tr("lang_toggle"))
-        self.dot_lbl.setText(f"● {LM.tr('status_connected')}")
-        self.logout_btn.setText(f"⎋  {LM.tr('signout_btn')}")
-        # Update nav button labels
-        for key, lbl_key, icon, _, _ in NAV:
+        self.dot_lbl.setText(LM.tr("connected"))
+        self.logout_btn.setText(LM.tr("sign_out"))
+        for key, lbl_key, _, _ in NAV:
             if key in self._btns:
-                self._btns[key].setText(f"{icon}  {LM.tr(lbl_key)}")
-        # Update topbar for current page
+                self._btns[key].setText(LM.tr(lbl_key))
         nav_entry = next((n for n in NAV if n[0] == self._current_key), None)
         if nav_entry:
-            _, lbl_key, _, sub_key, _ = nav_entry
+            _, lbl_key, sub_key, _ = nav_entry
             self.tb_title.setText(LM.tr(lbl_key))
             self.tb_sub.setText(LM.tr(sub_key))
 

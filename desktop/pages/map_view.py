@@ -8,6 +8,7 @@ from PyQt6.QtGui import (
 )
 import math
 import desktop.api as api
+from desktop.i18n import LM
 
 G="#1a6b35"; W="#ffffff"; P="#f4f6f4"; T="#111827"; M="#6b7280"; B="#e2e8e4"; A="#e8f5ee"
 
@@ -342,6 +343,7 @@ class MapPage(QWidget):
         self._workers = []
         self._build()
         self._load()
+        LM.language_changed.connect(self._retranslate)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -358,8 +360,9 @@ class MapPage(QWidget):
         cl.setContentsMargins(16,10,16,10)
         cl.setSpacing(12)
 
-        fl = QLabel("🌍  Farm:")
-        fl.setStyleSheet("color:#86efac;font-size:13px;font-family:'Segoe UI';background:transparent;font-weight:600;")
+        self.farm_lbl = QLabel(LM.tr("map_farm_label"))
+        self.farm_lbl.setStyleSheet(
+            "color:#86efac;font-size:13px;font-family:'Segoe UI';background:transparent;font-weight:600;")
 
         self.farm_combo = QComboBox()
         self.farm_combo.setFixedHeight(34)
@@ -379,21 +382,24 @@ class MapPage(QWidget):
         ref.setStyleSheet("QPushButton{background:#1a3a24;color:#86efac;border:1px solid #2d6a3f;border-radius:8px;font-size:14px;} QPushButton:hover{background:#2d6a3f;}")
         ref.clicked.connect(self._load)
 
-        rst = QPushButton("🔍  Reset")
-        rst.setFixedHeight(34)
-        rst.setStyleSheet("QPushButton{background:#1a3a24;color:#86efac;border:1px solid #2d6a3f;border-radius:8px;padding:0 12px;font-size:12px;font-family:'Segoe UI';} QPushButton:hover{background:#2d6a3f;}")
-        rst.clicked.connect(lambda: self.canvas.reset_view())
+        self.rst_btn = QPushButton(LM.tr("map_reset"))
+        self.rst_btn.setFixedHeight(34)
+        self.rst_btn.setStyleSheet(
+            "QPushButton{background:#1a3a24;color:#86efac;border:1px solid #2d6a3f;"
+            "border-radius:8px;padding:0 12px;font-size:12px;font-family:'Segoe UI';}"
+            "QPushButton:hover{background:#2d6a3f;}")
+        self.rst_btn.clicked.connect(lambda: self.canvas.reset_view())
 
-        cl.addWidget(fl)
+        cl.addWidget(self.farm_lbl)
         cl.addWidget(self.farm_combo, 1)
         cl.addWidget(ref)
-        cl.addWidget(rst)
+        cl.addWidget(self.rst_btn)
         layout.addWidget(ctrl)
 
         self.canvas = EarthMapCanvas()
         layout.addWidget(self.canvas, 1)
 
-        self.status = QLabel("Loading farms...")
+        self.status = QLabel(LM.tr("loading_farms"))
         self.status.setStyleSheet("color:#6b7280;font-size:11px;background:transparent;font-family:'Segoe UI';")
         layout.addWidget(self.status)
 
@@ -405,11 +411,15 @@ class MapPage(QWidget):
         w.finished.connect(lambda: self._workers.remove(w) if w in self._workers else None)
         w.start()
 
+    def _retranslate(self):
+        self.farm_lbl.setText(LM.tr("map_farm_label"))
+        self.rst_btn.setText(LM.tr("map_reset"))
+
     def _on_loaded(self, farms):
         self.farms = farms
         self.canvas.reset_view()
         self.farm_combo.clear()
-        self.farm_combo.addItem("🌍  All Farms", None)
+        self.farm_combo.addItem(LM.tr("all_farms_opt"), None)
         for f in farms:
             self.farm_combo.addItem(f"📍  {f['name']}", f["id"])
         self.status.setText(f"{len(farms)} farm(s) loaded  ·  Click marker to zoom  ·  Scroll to zoom  ·  Drag to pan")

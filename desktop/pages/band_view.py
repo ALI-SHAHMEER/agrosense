@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QDate
 from PyQt6.QtGui import QPixmap, QImage, QColor, QPainter, QFont
 import desktop.api as api
+from desktop.i18n import LM
 
 G="#1a6b35"; W="#ffffff"; P="#f4f6f4"; T="#111827"
 M="#6b7280"; B="#e2e8e4"; A="#e8f5ee"; R="#dc2626"; DB="#0b1f10"
@@ -208,6 +209,7 @@ class BandViewPage(QWidget):
         self._cards   = {}
         self._build()
         self._load_fields()
+        LM.language_changed.connect(self._retranslate)
 
     def _build(self):
         outer = QVBoxLayout(self)
@@ -261,7 +263,7 @@ class BandViewPage(QWidget):
         self.end_date.setCalendarPopup(True)
         self.end_date.setStyleSheet(ds)
 
-        self.fetch_btn = QPushButton("🛰  Fetch Band Composites")
+        self.fetch_btn = QPushButton(LM.tr("fetch_bands"))
         self.fetch_btn.setFixedHeight(36)
         self.fetch_btn.setStyleSheet(f"""
             QPushButton{{background:{G};color:white;border:none;border-radius:9px;
@@ -272,17 +274,20 @@ class BandViewPage(QWidget):
         """)
         self.fetch_btn.clicked.connect(self._fetch)
 
-        cl.addWidget(lbl("Field:"))
+        self.field_lbl = lbl(LM.tr("field_label"))
+        self.start_lbl = lbl(LM.tr("start_label"))
+        self.end_lbl   = lbl(LM.tr("end_label"))
+        cl.addWidget(self.field_lbl)
         cl.addWidget(self.field_combo, 2)
-        cl.addWidget(lbl("Start:"))
+        cl.addWidget(self.start_lbl)
         cl.addWidget(self.start_date)
-        cl.addWidget(lbl("End:"))
+        cl.addWidget(self.end_lbl)
         cl.addWidget(self.end_date)
         cl.addWidget(self.fetch_btn)
         outer.addWidget(ctrl)
 
         # Status
-        self.status = QLabel("Select a field and click Fetch Band Composites")
+        self.status = QLabel(LM.tr("select_field_fetch"))
         self.status.setStyleSheet(
             f"color:{M};font-size:12px;background:transparent;font-family:'Segoe UI';")
         outer.addWidget(self.status)
@@ -313,6 +318,7 @@ class BandViewPage(QWidget):
         self._lw = LoadWorker()
         self._lw.done.connect(self._on_loaded)
         self._lw.err.connect(lambda msg: self.status.setText(f"❌  {msg}"))
+        self._lw.finished.connect(lambda: None)
         self._lw.start()
 
     def _on_loaded(self, farms, fields):
@@ -346,7 +352,7 @@ class BandViewPage(QWidget):
         date_end   = self.end_date.date().toString("yyyy-MM-dd")
 
         self.fetch_btn.setEnabled(False)
-        self.fetch_btn.setText("⏳  Fetching from GEE...")
+        self.fetch_btn.setText(LM.tr("fetching_bands_btn"))
         self.status.setText(
             f"🛰  Fetching {len(COMPOSITES)} band composites from Google Earth Engine...")
 
@@ -407,10 +413,17 @@ class BandViewPage(QWidget):
         if card:
             card.set_error(msg)
 
+    def _retranslate(self):
+        self.field_lbl.setText(LM.tr("field_label"))
+        self.start_lbl.setText(LM.tr("start_label"))
+        self.end_lbl.setText(LM.tr("end_label"))
+        if self.fetch_btn.isEnabled():
+            self.fetch_btn.setText(LM.tr("fetch_bands"))
+
     def _check_done(self):
         running = sum(1 for w in self._workers if w.isRunning())
         if running == 0:
             self.fetch_btn.setEnabled(True)
-            self.fetch_btn.setText("🛰  Fetch Band Composites")
+            self.fetch_btn.setText(LM.tr("fetch_bands"))
             self.status.setText(
                 f"✅  All {len(COMPOSITES)} band composites loaded!")
