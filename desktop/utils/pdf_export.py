@@ -33,14 +33,14 @@ def _register_urdu_fonts():
     if _UR_FONTS_REGISTERED:
         return
     pdfmetrics.registerFont(TTFont(
-        'NastaliqUrdu',
-        '/usr/share/fonts/truetype/noto/NotoNastaliqUrdu-Regular.ttf'))
+        'NaskhArabic',
+        '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'))
     pdfmetrics.registerFont(TTFont(
-        'NastaliqUrdu-Bold',
-        '/usr/share/fonts/truetype/noto/NotoNastaliqUrdu-Bold.ttf'))
-    registerFontFamily('NastaliqUrdu',
-                       normal='NastaliqUrdu', bold='NastaliqUrdu-Bold',
-                       italic='NastaliqUrdu', boldItalic='NastaliqUrdu-Bold')
+        'NaskhArabic-Bold',
+        '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Bold.ttf'))
+    registerFontFamily('NaskhArabic',
+                       normal='NaskhArabic', bold='NaskhArabic-Bold',
+                       italic='NaskhArabic', boldItalic='NaskhArabic-Bold')
     _UR_FONTS_REGISTERED = True
 
 
@@ -102,7 +102,7 @@ _UR = {
     "upper_bound":      "اوپری حد (95%)",
     "harvest":          "کٹائی کی تیاری",
     # soil params
-    "soil_ph":          "مٹی pH",
+    "soil_ph":          "مٹی پی ایچ",
     "salinity":         "نمکینیت",
     "organic":          "نامیاتی مادہ",
     # VRA params
@@ -134,6 +134,8 @@ def _tbl(data, cols, extras=None, font="Helvetica", bold_font="Helvetica-Bold", 
         ("BACKGROUND", (0, 0), (-1, 0), C_DARK),
         ("TEXTCOLOR", (0, 0), (-1, 0), C_WHITE),
         ("FONTNAME", (0, 0), (-1, 0), bold_font),
+        ("FONTNAME", (0, 1), (0, -1), font),
+        ("FONTNAME", (1, 1), (-1, -1), "Helvetica"),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [C_LIGHT, C_WHITE]),
         ("GRID", (0, 0), (-1, -1), 0.5, C_BORDER),
@@ -182,9 +184,9 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
     if is_ur:
         _register_urdu_fonts()
 
-    fn      = "NastaliqUrdu"      if is_ur else "Helvetica"
-    fn_bold = "NastaliqUrdu-Bold" if is_ur else "Helvetica-Bold"
-    fn_mono = "NastaliqUrdu"      if is_ur else "Courier"
+    fn      = "NaskhArabic"      if is_ur else "Helvetica"
+    fn_bold = "NaskhArabic-Bold" if is_ur else "Helvetica-Bold"
+    fn_mono = "NaskhArabic"      if is_ur else "Courier"
     fs_body = 11  if is_ur else 9
     fs_hdr  = 13  if is_ur else 12
     fs_ttl  = 24  if is_ur else 22
@@ -359,8 +361,6 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
         return T("low")
 
     hdr_row = [T("index"), T("value"), T("threshold"), T("visual_bar"), T("status")]
-    if is_ur:
-        hdr_row = [_ur(c) for c in hdr_row]
     rows = [hdr_row]
     for name, key, good, warn in [
         ("NDVI", "ndvi", 0.25, 0.15), ("EVI", "evi", 0.18, 0.10),
@@ -372,14 +372,13 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
         filled = int(pct * 25)
         bar = "█" * filled + "-" * (25 - filled)
         st = idx_status(v, good, warn)
-        if is_ur:
-            st = _ur(st)
         rows.append([name, f"{v:.4f}", f">{warn:.2f}", bar, st])
     it = Table(rows, colWidths=[W*0.10, W*0.12, W*0.13, W*0.48, W*0.17])
     it.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), C_DARK), ("TEXTCOLOR", (0, 0), (-1, 0), C_WHITE),
         ("FONTNAME", (0, 0), (-1, 0), fn_bold), ("FONTSIZE", (0, 0), (-1, -1), fs_body),
-        ("FONTNAME", (3, 1), (3, -1), fn_mono), ("FONTSIZE", (3, 1), (3, -1), 7),
+        ("FONTNAME", (4, 1), (4, -1), fn),
+        ("FONTNAME", (3, 1), (3, -1), "Courier"), ("FONTSIZE", (3, 1), (3, -1), 7),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [C_LIGHT, C_WHITE]),
         ("GRID", (0, 0), (-1, -1), 0.5, C_BORDER),
         ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
@@ -419,21 +418,18 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
     story.append(h2(T("sec2")))
     probs = stress.get("probabilities", {})
     ch_hdr = [T("class"), T("probability"), T("conf_bar")]
-    if is_ur:
-        ch_hdr = [_ur(c) for c in ch_hdr]
     hrows = [ch_hdr]
     for cls, p in probs.items():
         filled = int(p * 35)
         bar = "█" * filled + "-" * (35 - filled)
         cls_lbl = T(cls) if cls in ("Healthy", "Stressed", "Diseased") else cls
-        if is_ur:
-            cls_lbl = _ur(cls_lbl)
         hrows.append([cls_lbl, f"{p*100:.1f}%", bar])
     ht = Table(hrows, colWidths=[W*0.25, W*0.15, W*0.60])
     ht.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), C_DARK), ("TEXTCOLOR", (0, 0), (-1, 0), C_WHITE),
         ("FONTNAME", (0, 0), (-1, 0), fn_bold), ("FONTSIZE", (0, 0), (-1, -1), fs_body),
-        ("FONTNAME", (2, 1), (2, -1), fn_mono), ("FONTSIZE", (2, 1), (2, -1), 8),
+        ("FONTNAME", (0, 1), (0, -1), fn),
+        ("FONTNAME", (2, 1), (2, -1), "Courier"), ("FONTSIZE", (2, 1), (2, -1), 8),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [C_LIGHT, C_WHITE, C_LIGHT]),
         ("GRID", (0, 0), (-1, -1), 0.5, C_BORDER),
         ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
@@ -455,12 +451,8 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
 
     def make_kv(pairs, col_widths, extras=None):
         rows = [[T("parameter"), T("value")]]
-        if is_ur:
-            rows = [[_ur(T("parameter")), _ur(T("value"))]]
         for k, v in pairs:
-            k_txt = _ur(k) if is_ur else k
-            v_txt = _ur(str(v)) if is_ur else str(v)
-            rows.append([k_txt, v_txt])
+            rows.append([k, str(v)])
         return _tbl(rows, col_widths, extras,
                     font=fn, bold_font=fn_bold, align=align)
 
@@ -470,7 +462,7 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
         (T("water_needed"),   f"{irrig.get('water_amount_mm', 0):.1f} mm"),
         (T("confidence"),     f"{irrig.get('confidence', 0)*100:.0f}%"),
     ], [W*0.40, W*0.60],
-        [("TEXTCOLOR", (1, 1), (1, 1), C_BLUE), ("FONTNAME", (1, 1), (1, 1), fn_bold)]))
+        [("TEXTCOLOR", (1, 1), (1, 1), C_BLUE), ("FONTNAME", (1, 1), (1, 1), "Helvetica-Bold")]))
     story.append(Spacer(1, 0.4*cm))
 
     # ── 4. YIELD ──────────────────────────────────────────────────────────────
@@ -481,24 +473,16 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
         (T("upper_bound"), f"{yld.get('yield_upper_bound', 0):.3f} t/ha"),
         (T("harvest"),     f"{yld.get('harvest_readiness_pct', 0):.1f}%"),
     ], [W*0.40, W*0.60],
-        [("TEXTCOLOR", (1, 1), (1, 1), C_PURPLE), ("FONTNAME", (1, 1), (1, 1), fn_bold)]))
+        [("TEXTCOLOR", (1, 1), (1, 1), C_PURPLE), ("FONTNAME", (1, 1), (1, 1), "Helvetica-Bold")]))
     story.append(Spacer(1, 0.4*cm))
 
     # ── 5. SOIL ───────────────────────────────────────────────────────────────
     story.append(h2(T("sec5")))
     soil_hdr = [T("parameter"), T("value"), T("status")]
-    if is_ur:
-        soil_hdr = [_ur(c) for c in soil_hdr]
     soil_rows = [soil_hdr,
-        [T("soil_ph") if not is_ur else _ur(T("soil_ph")),
-         f"{soil.get('soil_ph', 0):.2f}",
-         soil.get("ph_status", "—")],
-        [T("salinity") if not is_ur else _ur(T("salinity")),
-         f"{soil.get('salinity_ds_m', 0):.3f} dS/m",
-         soil.get("salinity_status", "—")],
-        [T("organic") if not is_ur else _ur(T("organic")),
-         f"{soil.get('organic_matter_pct', 0):.3f}%",
-         soil.get("organic_matter_status", "—")],
+        [T("soil_ph"), f"{soil.get('soil_ph', 0):.2f}", soil.get("ph_status", "—")],
+        [T("salinity"), f"{soil.get('salinity_ds_m', 0):.3f} dS/m", soil.get("salinity_status", "—")],
+        [T("organic"), f"{soil.get('organic_matter_pct', 0):.3f}%", soil.get("organic_matter_status", "—")],
     ]
     story.append(_tbl(soil_rows, [W*0.35, W*0.30, W*0.35],
                       font=fn, bold_font=fn_bold, align=align))
@@ -511,7 +495,7 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
         (T("fert_rec"),  vra.get("fertiliser_recommendation", "—")),
         (T("confidence"), f"{vra.get('confidence', 0)*100:.0f}%"),
     ], [W*0.40, W*0.60],
-        [("TEXTCOLOR", (1, 1), (1, 1), C_GREEN), ("FONTNAME", (1, 1), (1, 1), fn_bold)]))
+        [("TEXTCOLOR", (1, 1), (1, 1), C_GREEN), ("FONTNAME", (1, 1), (1, 1), "Helvetica-Bold")]))
 
     # ── 7. BAND COMPOSITES ────────────────────────────────────────────────────
     fid   = d.get("field_id")
