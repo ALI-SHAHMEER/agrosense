@@ -14,25 +14,23 @@ G="#1a6b35"; W="#ffffff"; P="#f4f6f4"; T="#111827"; M="#6b7280"; B="#e2e8e4"; A=
 
 class FarmWorker(QThread):
     done = pyqtSignal(list)
+    err  = pyqtSignal(str)
+
     def run(self):
         try:
             farms = api.get_farms()
             for farm in farms:
                 fields = api.get_fields(farm["id"])
-                # Fetch latest satellite indices for each field
                 for f in fields:
                     try:
                         history = api.get_index_history(f["id"])
-                        if history:
-                            f["latest_indices"] = history[0]
-                        else:
-                            f["latest_indices"] = None
-                    except:
+                        f["latest_indices"] = history[0] if history else None
+                    except Exception:
                         f["latest_indices"] = None
                 farm["fields"] = fields
             self.done.emit(farms)
-        except:
-            self.done.emit([])
+        except Exception as e:
+            self.err.emit(str(e))
 
 
 class EarthMapCanvas(QWidget):
@@ -403,6 +401,7 @@ class MapPage(QWidget):
         w = FarmWorker()
         self._workers.append(w)
         w.done.connect(self._on_loaded)
+        w.err.connect(lambda msg: self.status.setText(f"❌  {msg}"))
         w.finished.connect(lambda: self._workers.remove(w) if w in self._workers else None)
         w.start()
 

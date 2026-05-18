@@ -96,6 +96,8 @@ class BandWorker(QThread):
 
 class LoadWorker(QThread):
     done = pyqtSignal(list, list)
+    err  = pyqtSignal(str)
+
     def run(self):
         try:
             farms  = api.get_farms()
@@ -105,8 +107,8 @@ class LoadWorker(QThread):
                     f["farm_name"] = farm["name"]
                     fields.append(f)
             self.done.emit(farms, fields)
-        except:
-            self.done.emit([], [])
+        except Exception as e:
+            self.err.emit(str(e))
 
 
 class BandCard(QFrame):
@@ -310,6 +312,7 @@ class BandViewPage(QWidget):
     def _load_fields(self):
         self._lw = LoadWorker()
         self._lw.done.connect(self._on_loaded)
+        self._lw.err.connect(lambda msg: self.status.setText(f"❌  {msg}"))
         self._lw.start()
 
     def _on_loaded(self, farms, fields):
