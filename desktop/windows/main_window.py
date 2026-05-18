@@ -58,6 +58,53 @@ class MainWindow(QMainWindow):
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
             QScrollBar:horizontal {{ height: 0; }}
+
+            QMessageBox {{
+                background: #ffffff;
+            }}
+            QMessageBox QLabel {{
+                background: transparent;
+                color: #111827;
+                font-size: 13px;
+                font-family: 'Segoe UI';
+            }}
+            QMessageBox QPushButton {{
+                background: #1a6b35;
+                color: #ffffff;
+                border: none;
+                border-radius: 7px;
+                padding: 6px 24px;
+                font-size: 13px;
+                font-weight: 600;
+                font-family: 'Segoe UI';
+                min-width: 80px;
+                min-height: 32px;
+            }}
+            QMessageBox QPushButton:hover  {{ background: #145a2b; }}
+            QMessageBox QPushButton:pressed {{ background: #0f4520; }}
+
+            QDialog {{
+                background: #ffffff;
+            }}
+            QDialog QLabel {{
+                background: transparent;
+                color: #111827;
+                font-family: 'Segoe UI';
+            }}
+            QDialog QPushButton {{
+                background: #1a6b35;
+                color: #ffffff;
+                border: none;
+                border-radius: 7px;
+                padding: 6px 20px;
+                font-size: 13px;
+                font-weight: 600;
+                font-family: 'Segoe UI';
+                min-width: 80px;
+                min-height: 32px;
+            }}
+            QDialog QPushButton:hover  {{ background: #145a2b; }}
+            QDialog QPushButton:pressed {{ background: #0f4520; }}
         """)
         self.setCentralWidget(root_w)
         hl = QHBoxLayout(root_w)

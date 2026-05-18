@@ -9,9 +9,11 @@ from desktop.pages.dashboard import Worker, lbl, card
 
 G = "#1a6b35"; W = "#ffffff"; P = "#f4f6f4"
 T = "#111827"; M = "#6b7280"; B = "#e2e8e4"; A = "#e8f5ee"
-BLUE = "#2563eb"; RED = "#dc2626"; GOLD = "#d4a017"; EMERALD = "#22c55e"
+BLUE = "#2563eb"; RED = "#dc2626"; GOLD = "#d97706"; EMERALD = "#16a34a"
 
-SEVERITY_COLOR = {"high": RED, "medium": GOLD, "low": EMERALD}
+SEVERITY_COLOR  = {"high": "#dc2626", "medium": "#d97706", "low": "#16a34a"}
+SEVERITY_BG     = {"high": "#fef2f2", "medium": "#fffbeb", "low":  "#f0fdf4"}
+SEVERITY_BORDER = {"high": "#fecaca", "medium": "#fde68a", "low":  "#bbf7d0"}
 
 CONDITION_EMOJI = {
     "clear": "☀️", "partly_cloudy": "⛅", "foggy": "🌫️",
@@ -89,7 +91,7 @@ class SmartFarmingPage(QWidget):
 
         # Row 2 — Alerts
         self.alerts_frame, self.alerts_layout = card()
-        self.alerts_title_lbl = lbl(LM.tr("alerts_title"), 13, T, True)
+        self.alerts_title_lbl = lbl(LM.tr("alerts_title"), 13, G, True)
         self.alerts_layout.addWidget(self.alerts_title_lbl)
         self.alerts_row = QHBoxLayout(); self.alerts_row.setSpacing(10)
         self.alerts_layout.addLayout(self.alerts_row)
@@ -97,7 +99,7 @@ class SmartFarmingPage(QWidget):
 
         # Row 3 — 7-Day Forecast
         self.forecast_frame, self.forecast_layout = card()
-        self.forecast_title_lbl = lbl(LM.tr("forecast_title"), 13, T, True)
+        self.forecast_title_lbl = lbl(LM.tr("forecast_title"), 13, G, True)
         self.forecast_layout.addWidget(self.forecast_title_lbl)
         self.forecast_row = QHBoxLayout(); self.forecast_row.setSpacing(8)
         self.forecast_layout.addLayout(self.forecast_row)
@@ -106,14 +108,14 @@ class SmartFarmingPage(QWidget):
         # Row 4 — Planting rec + ML summary (side by side)
         rec_row = QHBoxLayout(); rec_row.setSpacing(12)
         self.planting_frame, self.planting_layout = card()
-        self.planting_title_lbl = lbl(LM.tr("planting_rec_title"), 13, T, True)
+        self.planting_title_lbl = lbl(LM.tr("planting_rec_title"), 13, G, True)
         self.planting_layout.addWidget(self.planting_title_lbl)
         self.planting_body = QVBoxLayout()
         self.planting_layout.addLayout(self.planting_body)
         rec_row.addWidget(self.planting_frame, 1)
 
         self.ml_frame, self.ml_layout = card()
-        self.ml_title_lbl = lbl(LM.tr("ml_summary_title"), 13, T, True)
+        self.ml_title_lbl = lbl(LM.tr("ml_summary_title"), 13, G, True)
         self.ml_layout.addWidget(self.ml_title_lbl)
         self.ml_body = QVBoxLayout()
         self.ml_layout.addLayout(self.ml_body)
@@ -122,9 +124,9 @@ class SmartFarmingPage(QWidget):
 
         # Row 5 — Weekly summary
         self.weekly_frame, self.weekly_layout = card()
-        self.weekly_title_lbl = lbl(LM.tr("weekly_summary"), 13, T, True)
+        self.weekly_title_lbl = lbl(LM.tr("weekly_summary"), 13, G, True)
         self.weekly_layout.addWidget(self.weekly_title_lbl)
-        self.weekly_row = QHBoxLayout(); self.weekly_row.setSpacing(10)
+        self.weekly_row = QHBoxLayout(); self.weekly_row.setSpacing(12)
         self.weekly_layout.addLayout(self.weekly_row)
         ml.addWidget(self.weekly_frame)
 
@@ -241,15 +243,21 @@ class SmartFarmingPage(QWidget):
             return
 
         for alert in alerts:
-            color = SEVERITY_COLOR.get(alert["severity"], M)
+            sev = alert["severity"]
+            fg  = SEVERITY_COLOR.get(sev, M)
+            bg  = SEVERITY_BG.get(sev, W)
+            bdr = SEVERITY_BORDER.get(sev, B)
             f = QFrame()
-            f.setFixedWidth(220)
+            f.setFixedWidth(240)
             f.setStyleSheet(
-                f"QFrame{{background:{color}18;border:1.5px solid {color}55;border-radius:10px;}}")
-            fl = QVBoxLayout(f); fl.setContentsMargins(14, 12, 14, 12); fl.setSpacing(4)
-            fl.addWidget(lbl(alert["title"], 12, color, True))
+                f"QFrame{{background:{bg};border:1.5px solid {bdr};border-radius:10px;}}")
+            fl = QVBoxLayout(f); fl.setContentsMargins(14, 12, 14, 12); fl.setSpacing(5)
+            fl.addWidget(lbl(alert["title"], 12, fg, True))
             fl.addWidget(lbl(alert["message"], 11, T, wrap=True))
-            fl.addWidget(lbl(f"→ {alert['action']}", 10, M, wrap=True))
+            sep = QFrame(); sep.setFixedHeight(1)
+            sep.setStyleSheet(f"background:{bdr};border:none;")
+            fl.addWidget(sep)
+            fl.addWidget(lbl(f"→ {alert['action']}", 10, "#374151", wrap=True))
             self.alerts_row.addWidget(f)
         self.alerts_row.addStretch()
 
@@ -258,19 +266,41 @@ class SmartFarmingPage(QWidget):
         for day in forecast:
             emoji = CONDITION_EMOJI.get(day["condition"], "🌤️")
             f = QFrame()
-            f.setFixedWidth(110)
-            f.setStyleSheet(f"QFrame{{background:{W};border:1px solid {B};border-radius:10px;}}")
-            fl = QVBoxLayout(f); fl.setContentsMargins(10, 10, 10, 10); fl.setSpacing(3)
+            f.setFixedWidth(118)
+            f.setStyleSheet(
+                f"QFrame{{background:{W};border:1px solid {B};border-radius:12px;}}"
+                f"QFrame:hover{{border-color:#9ca3af;background:#f9fafb;}}")
+            fl = QVBoxLayout(f); fl.setContentsMargins(10, 12, 10, 12); fl.setSpacing(4)
             fl.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-            fl.addWidget(lbl(day["day_name"][:3], 10, M, True))
+
+            day_lbl = lbl(day["day_name"][:3].upper(), 9, M, True)
+            day_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            fl.addWidget(day_lbl)
+
             em = QLabel(emoji)
             em.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            em.setStyleSheet("font-size:20px;background:transparent;")
+            em.setStyleSheet("font-size:22px;background:transparent;padding:4px 0;")
             fl.addWidget(em)
-            fl.addWidget(lbl(f"{day['temp_max']:.0f}°/{day['temp_min']:.0f}°", 12, T, True))
-            fl.addWidget(lbl(f"💧 {day['rain_probability']:.0f}%", 10, BLUE))
-            fl.addWidget(lbl(f"💦 {day['humidity']:.0f}%", 10, M))
-            fl.addWidget(lbl(f"💨 {day['wind_kmh']:.0f}", 10, M))
+
+            temp_lbl = lbl(f"{day['temp_max']:.0f}° / {day['temp_min']:.0f}°", 11, T, True)
+            temp_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            fl.addWidget(temp_lbl)
+
+            sep = QFrame(); sep.setFixedHeight(1)
+            sep.setStyleSheet(f"background:{B};border:none;margin:2px 0;")
+            fl.addWidget(sep)
+
+            for icon, val, color in [
+                ("💧", f"{day['rain_probability']:.0f}%", BLUE),
+                ("💦", f"{day['humidity']:.0f}%",         M),
+                ("💨", f"{day['wind_kmh']:.0f} km/h",     "#374151"),
+            ]:
+                row = QHBoxLayout(); row.setSpacing(3); row.setContentsMargins(0,0,0,0)
+                il = QLabel(icon); il.setStyleSheet("font-size:10px;background:transparent;")
+                vl = lbl(val, 10, color)
+                row.addStretch(); row.addWidget(il); row.addWidget(vl); row.addStretch()
+                fl.addLayout(row)
+
             self.forecast_row.addWidget(f)
         self.forecast_row.addStretch()
 
@@ -358,17 +388,21 @@ class SmartFarmingPage(QWidget):
     def _render_weekly(self, ws):
         self._clear_layout(self.weekly_row)
         stats = [
-            (LM.tr("avg_temp"),     f"{ws.get('avg_temp', 0):.1f}°C",      G),
-            (LM.tr("total_rain"),   f"{ws.get('total_rain_mm', 0):.1f} mm", BLUE),
-            (LM.tr("avg_humidity"), f"{ws.get('avg_humidity', 0):.0f}%",    "#0891b2"),
-            (LM.tr("avg_wind"),     f"{ws.get('avg_wind_kmh', 0):.0f} km/h", "#374151"),
+            ("🌡", LM.tr("avg_temp"),     f"{ws.get('avg_temp', 0):.1f}°C",       G,        "#e8f5ee", "#b8d8c4"),
+            ("🌧", LM.tr("total_rain"),   f"{ws.get('total_rain_mm', 0):.1f} mm",  BLUE,     "#eff6ff", "#bfdbfe"),
+            ("💦", LM.tr("avg_humidity"), f"{ws.get('avg_humidity', 0):.0f}%",     "#0891b2","#ecfeff", "#a5f3fc"),
+            ("💨", LM.tr("avg_wind"),     f"{ws.get('avg_wind_kmh', 0):.0f} km/h", "#374151","#f8fafc", "#e2e8f0"),
         ]
-        for label, value, color in stats:
+        for icon, label, value, color, bg, border in stats:
             f = QFrame()
-            f.setStyleSheet(f"QFrame{{background:{A};border:1px solid #b8d8c4;border-radius:10px;}}")
-            fl = QVBoxLayout(f); fl.setContentsMargins(16, 12, 16, 12); fl.setSpacing(4)
+            f.setStyleSheet(
+                f"QFrame{{background:{bg};border:1px solid {border};border-radius:12px;}}")
+            fl = QVBoxLayout(f); fl.setContentsMargins(18, 14, 18, 14); fl.setSpacing(6)
+            ic = QLabel(icon)
+            ic.setStyleSheet("font-size:18px;background:transparent;")
+            fl.addWidget(ic)
             fl.addWidget(lbl(label, 10, M))
-            fl.addWidget(lbl(value, 20, color, True))
+            fl.addWidget(lbl(value, 22, color, True))
             self.weekly_row.addWidget(f, 1)
 
     # ── i18n retranslate ──────────────────────────────────────────────────────
