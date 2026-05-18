@@ -10,6 +10,7 @@ from desktop.pages.imagery   import ImageryPage
 from desktop.pages.analytics import AnalyticsPage
 from desktop.pages.map_view  import MapPage
 from desktop.pages.band_view import BandViewPage
+from desktop.pages.smart_farming import SmartFarmingPage
 import desktop.api as api
 from desktop.i18n import LM
 
@@ -21,6 +22,7 @@ NAV = [
     ("analytics", "nav_analytics", "topbar_sub_analytics", AnalyticsPage),
     ("map",       "nav_map",       "topbar_sub_map",       MapPage),
     ("bands",     "nav_bands",     "topbar_sub_bands",     BandViewPage),
+    ("smart",     "nav_smart",     "topbar_sub_smart",     SmartFarmingPage),
 ]
 
 G = "#1a6b35"; GB = "#0d2414"; W = "#ffffff"; P = "#f4f6f4"
