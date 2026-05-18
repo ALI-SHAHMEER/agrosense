@@ -75,6 +75,9 @@ def health_check():
         return r.status_code == 200
     except: return False
 
+def get_smart_farming(field_id):
+    return _get(f"/weather/smart-farming/{field_id}")
+
 def get_band_thumbnail(field_id, band_type, start_date, end_date) -> bytes:
     import requests as req
     r = req.get(
