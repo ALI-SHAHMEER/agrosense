@@ -43,18 +43,19 @@ class MainWindow(QMainWindow):
 
     def _build(self):
         root_w = QWidget()
-        root_w.setStyleSheet(f"background:{P};" + """
-            QScrollBar:vertical {
+        root_w.setStyleSheet(f"""
+            QWidget {{ background: {P}; }}
+            QScrollBar:vertical {{
                 width: 8px; background: #f1f5f1;
                 border-radius: 4px; margin: 0;
-            }
-            QScrollBar::handle:vertical {
+            }}
+            QScrollBar::handle:vertical {{
                 background: #b8d8c4; border-radius: 4px; min-height: 30px;
-            }
-            QScrollBar::handle:vertical:hover { background: #1a6b35; }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }
-            QScrollBar:horizontal { height: 0; }
+            }}
+            QScrollBar::handle:vertical:hover {{ background: #1a6b35; }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: none; }}
+            QScrollBar:horizontal {{ height: 0; }}
         """)
         self.setCentralWidget(root_w)
         hl = QHBoxLayout(root_w)
