@@ -205,3 +205,7 @@ def test_reasons_list_max_three():
     forecast = [_day()] * 7
     rec = _planting_recommendation(forecast, [], None)
     assert len(rec["reasons"]) <= 3
+
+
+def test_apply_rules_empty_forecast_returns_no_alerts():
+    assert _apply_rules([]) == []

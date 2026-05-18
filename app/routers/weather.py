@@ -11,7 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Farm, Field
+from app.ml.predictor import predict_crop_stress, predict_irrigation, predict_yield
+from app.models import Farm, Field, SatelliteImage, User, VegetationIndex
 from app.routers.auth import get_current_user
 
 log = logging.getLogger(__name__)
@@ -253,9 +254,9 @@ def _fetch_forecast(lat: float, lon: float) -> list:
         days.append({
             "date": date_str,
             "day_name": _DAY_NAMES[date_obj.weekday()],
-            "temp_max": daily["temperature_2m_max"][i],
-            "temp_min": daily["temperature_2m_min"][i],
-            "temp_avg": daily["temperature_2m_mean"][i],
+            "temp_max": daily["temperature_2m_max"][i] or 0,
+            "temp_min": daily["temperature_2m_min"][i] or 0,
+            "temp_avg": daily["temperature_2m_mean"][i] or 0,
             "rain_mm": daily["precipitation_sum"][i] or 0,
             "rain_probability": daily["precipitation_probability_max"][i] or 0,
             "humidity": humidity,
@@ -271,11 +272,9 @@ def _fetch_forecast(lat: float, lon: float) -> list:
 def smart_farming(
     field_id: UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     """Return 7-day forecast, alerts, planting recommendation, and ML summary."""
-    from app.models import SatelliteImage, VegetationIndex
-    from app.ml.predictor import predict_crop_stress, predict_irrigation, predict_yield
 
     # 1. Load field + farm
     field = (
