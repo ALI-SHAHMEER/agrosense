@@ -108,7 +108,7 @@ class LoginWindow(QWidget):
         self.tag_lbl = QLabel(LM.tr("login_tagline"))
         self.tag_lbl.setStyleSheet(
             "color:rgba(255,255,255,0.6);font-size:14px;font-family:'Segoe UI';"
-            "background:transparent;line-height:1.6;")
+            "background:transparent;")
         ll.addWidget(self.tag_lbl)
         ll.addSpacing(32)
 

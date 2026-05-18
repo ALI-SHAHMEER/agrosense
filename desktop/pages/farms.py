@@ -24,7 +24,7 @@ def mk_input(ph=""):
 def mk_btn(text, color=G, w=None):
     b = QPushButton(text); b.setFixedHeight(38)
     if w: b.setFixedWidth(w)
-    b.setStyleSheet(f"QPushButton{{background:{color};color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Segoe UI';padding:0 14px;}} QPushButton:hover{{opacity:0.9;}}")
+    b.setStyleSheet(f"QPushButton{{background:{color};color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:'Segoe UI';padding:0 14px;}} QPushButton:disabled{{background:#9ca3af;}}")
     return b
 
 class Worker(QThread):
