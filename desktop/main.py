@@ -11,8 +11,10 @@ faulthandler.enable(file=open('/tmp/agrosense_crash.log', 'w'), all_threads=True
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.getcwd())
 
+os.environ.setdefault("QT_LOGGING_RULES", "qt.text.font.db=false")
+
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QLoggingCategory
 from PyQt6.QtGui import QFont
 
 from desktop.windows.login import LoginWindow
@@ -22,6 +24,7 @@ import desktop.api as api
 
 def main():
     app = QApplication(sys.argv)
+    QLoggingCategory.setFilterRules("qt.text.font.db=false")
     app.setApplicationName("AgroSense")
     app.setOrganizationName("SMIU")
 
