@@ -64,6 +64,7 @@ STRINGS = {
     "stat_fields":            {"en": "Total Fields",                          "ur": "کل فیلڈز"},
     "stat_health":            {"en": "Crop Health",                           "ur": "فصل کی صحت"},
     "stat_yield":             {"en": "Est. Yield",                            "ur": "متوقع پیداوار"},
+    "stat_temp":              {"en": "Temperature",                           "ur": "درجہ حرارت"},
     "analysis_title":         {"en": "🔬  Full Field Analysis",               "ur": "🔬  مکمل فیلڈ تجزیہ"},
     "run_analysis":           {"en": "▶  Run Analysis",                       "ur": "▶  تجزیہ چلائیں"},
     "analysing":              {"en": "Analysing...",                          "ur": "تجزیہ ہو رہا ہے..."},
