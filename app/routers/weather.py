@@ -213,6 +213,33 @@ def _planting_recommendation(forecast: list, alerts: list, irrig_result: dict | 
     }
 
 
+# ── Current weather fetch ─────────────────────────────────────────────────────
+
+def _parse_current_response(data: dict) -> dict:
+    cur = data.get("current", {})
+    return {
+        "temperature_c": cur.get("temperature_2m") or 0.0,
+        "feels_like_c":  cur.get("apparent_temperature") or 0.0,
+        "condition":     _wmo_to_condition(cur.get("weathercode") or 0),
+    }
+
+
+def _fetch_current(lat: float, lon: float) -> dict:
+    resp = _requests.get(
+        "https://api.open-meteo.com/v1/forecast",
+        params={
+            "latitude":  lat,
+            "longitude": lon,
+            "current":   ["temperature_2m", "apparent_temperature", "weathercode"],
+            "timezone":  "auto",
+        },
+        timeout=10,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Open-Meteo returned {resp.status_code}")
+    return _parse_current_response(resp.json())
+
+
 # ── Open-Meteo fetch ──────────────────────────────────────────────────────────
 
 _DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday",
@@ -363,3 +390,28 @@ def smart_farming(
         "ml_summary": ml_summary,
         "weekly_summary": weekly_summary,
     }
+
+
+@router.get("/current/{field_id}")
+def current_weather(
+    field_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return current temperature and condition for the field's farm location."""
+    field = (
+        db.query(Field)
+        .join(Farm)
+        .filter(Field.id == field_id, Farm.user_id == current_user.id)
+        .first()
+    )
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    farm = field.farm
+    if farm.latitude is None or farm.longitude is None:
+        raise HTTPException(status_code=422, detail="Farm location not set")
+    try:
+        return _fetch_current(farm.latitude, farm.longitude)
+    except Exception as exc:
+        log.warning("Open-Meteo current fetch failed: %s", exc)
+        raise HTTPException(status_code=503, detail="Weather service unavailable")

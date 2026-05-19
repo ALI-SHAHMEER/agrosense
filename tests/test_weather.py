@@ -3,7 +3,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # We import only the pure functions — no DB, no HTTP needed
-from app.routers.weather import _wmo_to_condition, _apply_rules, _planting_recommendation
+from app.routers.weather import _wmo_to_condition, _apply_rules, _planting_recommendation, _parse_current_response
 
 
 def _day(temp_max=25, temp_min=15, temp_avg=20, rain_mm=0,
@@ -209,3 +209,31 @@ def test_reasons_list_max_three():
 
 def test_apply_rules_empty_forecast_returns_no_alerts():
     assert _apply_rules([]) == []
+
+
+# ── _parse_current_response ───────────────────────────────────────────────────
+
+def test_parse_current_response_clear_sky():
+    data = {"current": {"temperature_2m": 34.1, "apparent_temperature": 36.2, "weathercode": 0}}
+    result = _parse_current_response(data)
+    assert result["temperature_c"] == 34.1
+    assert result["feels_like_c"] == 36.2
+    assert result["condition"] == "clear"
+
+def test_parse_current_response_thunderstorm():
+    data = {"current": {"temperature_2m": 22.0, "apparent_temperature": 21.0, "weathercode": 95}}
+    result = _parse_current_response(data)
+    assert result["condition"] == "thunderstorm"
+
+def test_parse_current_response_missing_current_key():
+    result = _parse_current_response({})
+    assert result["temperature_c"] == 0.0
+    assert result["feels_like_c"] == 0.0
+    assert result["condition"] == "clear"
+
+def test_parse_current_response_null_values():
+    data = {"current": {"temperature_2m": None, "apparent_temperature": None, "weathercode": None}}
+    result = _parse_current_response(data)
+    assert result["temperature_c"] == 0.0
+    assert result["feels_like_c"] == 0.0
+    assert result["condition"] == "clear"
