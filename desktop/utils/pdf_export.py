@@ -69,7 +69,7 @@ _UR = {
     "sec4": "پیداوار کی پیش گوئی",
     "sec5": "مٹی کی صورتحال",
     "sec6": "متغیر شرح اطلاق (VRA)",
-    "sec7": "سیٹلائٹ بینڈ کمپوزٹ (سینٹینل-2)",
+    "sec7": "8. سیٹلائٹ بینڈ کمپوزٹ (سینٹینل-2)",
     # table column headers
     "index":            "اشاریہ",
     "value":            "قدر",
@@ -119,7 +119,7 @@ _UR = {
     # footer
     "footer":           "AgroSense — SMIU فائنل ایئر پروجیکٹ 2025–2026 · سینٹینل-2 تصاویر گوگل ارتھ انجن · ML ماڈلز پاکستانی زرعی ڈیٹا · صرف رہنمائی کے لیے",
     # smart farming section
-    "sec8":           "اسمارٹ فارمنگ سفارشات",
+    "sec8":           "7. اسمارٹ فارمنگ سفارشات",
     "sf_alerts":      "موسمی انتباہات",
     "sf_planting":    "کاشت کاری کی سفارش",
     "sf_weekly":      "ہفتہ وار موسمی خلاصہ",
@@ -230,7 +230,7 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
             "sec4":          "4. Yield Prediction",
             "sec5":          "5. Soil Condition Assessment",
             "sec6":          "6. Variable Rate Application (VRA)",
-            "sec7":          "7. Satellite Band Composites (Sentinel-2)",
+            "sec7":          "8. Satellite Band Composites (Sentinel-2)",
             "index":         "Index",
             "value":         "Value",
             "threshold":     "Threshold",
@@ -272,7 +272,7 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
             "ndvi_good":     "🟢 Good",
             "ndvi_mod":      "🟡 Moderate",
             "ndvi_low":      "🔴 Low",
-            "sec8":           "8. Smart Farming Recommendations",
+            "sec8":           "7. Smart Farming Recommendations",
             "sf_alerts":      "Weather Alerts",
             "sf_planting":    "Planting Recommendation",
             "sf_weekly":      "Weekly Weather Summary",

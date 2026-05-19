@@ -126,7 +126,7 @@ def send_crop_alert(
       <h4>✅ Recommended Actions</h4>
       <ul>
         {"<li>Inspect the field immediately for visible disease symptoms</li>" if pred == "Diseased" else ""}
-        {"<li>Apply appropriate fungicide/pesticide treatment</li>" if pred == "Diseased" else "<li>Investigate water or nutrient stress factors</li>"}
+        {"<li>Apply appropriate fungicide/pesticide treatment</li>" if pred == "Diseased" else "<li>Investigate water or nutrient stress factors</li>" if pred == "Stressed" else "<li>Continue current crop management practices</li>"}
         <li>{'Irrigate immediately — soil moisture is critically low' if 'now' in irrig.get('recommendation','') else 'Monitor soil moisture levels closely'}</li>
         <li>Re-run AgroSense analysis in 7 days to track recovery</li>
         <li>Consult an agricultural extension officer if condition worsens</li>
