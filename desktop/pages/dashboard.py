@@ -50,13 +50,29 @@ class PDFWorker(QThread):
         self.path     = path
         self.language = language
     def run(self):
-        import traceback, logging
+        import traceback, logging, requests as _req
         logging.basicConfig(filename='/tmp/agrosense_pdf.log', level=logging.DEBUG,
                             format='%(asctime)s %(levelname)s %(message)s')
         try:
             logging.info('PDFWorker started, path=%s lang=%s', self.path, self.language)
+            sf_data = None
+            fid = self.data.get("field_id")
+            tok = self.data.get("_token")
+            if fid and tok:
+                try:
+                    r = _req.get(
+                        f"http://localhost:8000/weather/smart-farming/{fid}",
+                        headers={"Authorization": f"Bearer {tok}"},
+                        timeout=15,
+                    )
+                    if r.status_code == 200:
+                        sf_data = r.json()
+                        logging.info("Smart farming data fetched OK")
+                except Exception as sf_exc:
+                    logging.warning("Smart farming fetch failed (section omitted): %s", sf_exc)
             from desktop.utils.pdf_export import generate_report
-            generate_report(self.data, self.path, include_bands=True, language=self.language)
+            generate_report(self.data, self.path, include_bands=True,
+                            language=self.language, smart_farming_data=sf_data)
             logging.info('PDF generated OK')
             self.done.emit(self.path)
         except BaseException as e:
