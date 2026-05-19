@@ -90,8 +90,8 @@ class DashboardPage(QWidget):
 
         # Stats
         sr = QHBoxLayout(); sr.setSpacing(14)
-        stat_keys = ["stat_farms", "stat_fields", "stat_health", "stat_yield"]
-        stat_cols = [G, BLUE, EMERALD, GOLD]
+        stat_keys = ["stat_farms", "stat_fields", "stat_health", "stat_yield", "stat_temp"]
+        stat_cols = [G, BLUE, EMERALD, GOLD, RED]
         self._sv = []
         self._sl = []
         for key, col in zip(stat_keys, stat_cols):
@@ -124,6 +124,7 @@ class DashboardPage(QWidget):
             QComboBox QAbstractItemView::item{{color:{T};padding:8px 12px;min-height:28px;background:{W};}}
             QComboBox QAbstractItemView::item:hover{{background:{A};color:{T};}}
         """)
+        self.combo.currentIndexChanged.connect(self._fetch_temp)
         row.addWidget(self.combo, 1)
         self.run_btn = btn(LM.tr("run_analysis"))
         self.run_btn.setFixedWidth(160)
@@ -221,6 +222,18 @@ class DashboardPage(QWidget):
         self.run_btn.setText(LM.tr("run_analysis"))
         self.err_lbl.setText(f"⚠  {msg}")
         self.err_lbl.show()
+
+    def _fetch_temp(self):
+        fid = self.combo.currentData()
+        if not fid:
+            self._sv[4].setText("—")
+            return
+        w = Worker(api.get_current_weather, fid)
+        self._workers.append(w)
+        w.done.connect(lambda r: self._sv[4].setText(f"{r['temperature_c']:.0f} °C"))
+        w.err.connect(lambda _: self._sv[4].setText("—"))
+        w.finished.connect(lambda: self._workers.remove(w) if w in self._workers else None)
+        w.start()
 
     def _show(self, d):
         while self.res_l.count():
