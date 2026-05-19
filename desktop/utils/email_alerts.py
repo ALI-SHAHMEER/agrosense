@@ -4,7 +4,6 @@ Sends crop stress alerts via Gmail SMTP when diseased/stressed crops are detecte
 """
 import smtplib
 import os
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
 from dotenv import load_dotenv
@@ -47,14 +46,15 @@ def send_crop_alert(
     yld       = analysis_data.get("yield_prediction", {})
     indices   = analysis_data.get("vegetation_indices", {})
 
-    # Only send alert for stressed or diseased crops
-    if pred == "Healthy":
-        return {"success": False, "message": "Crop is healthy — no alert needed"}
-
-    color_map = {"Stressed": "#d4a017", "Diseased": "#dc2626"}
+    color_map = {"Healthy": "#1a6b35", "Stressed": "#d4a017", "Diseased": "#dc2626"}
     alert_color = color_map.get(pred, "#6b7280")
 
-    subject = f"🚨 AgroSense Alert: {pred} crop detected in {field}"
+    if pred == "Healthy":
+        subject      = f"✅ AgroSense Report: {field} crop is Healthy"
+        banner_text  = "CROP STATUS: HEALTHY — No immediate action required"
+    else:
+        subject      = f"🚨 AgroSense Alert: {pred} crop detected in {field}"
+        banner_text  = f"⚠  {pred.upper()} CROP DETECTED — Immediate attention required"
 
     html_body = f"""
 <!DOCTYPE html>
@@ -88,7 +88,7 @@ def send_crop_alert(
     <p>Satellite-Based Crop Intelligence System</p>
   </div>
   <div class="alert-banner">
-    ⚠  {pred.upper()} CROP DETECTED — Immediate attention required
+    {banner_text}
   </div>
   <div class="body">
     <div class="section">
@@ -147,15 +147,16 @@ def send_crop_alert(
         recipients.append(admin_email)
 
     try:
-        msg = MIMEMultipart("alternative")
+        from email.message import EmailMessage
+        msg = EmailMessage()
         msg["Subject"] = subject
         msg["From"]    = f"AgroSense Alerts <{smtp_user}>"
         msg["To"]      = ", ".join(recipients)
-        msg.attach(MIMEText(html_body, "html"))
+        msg.set_content(html_body, subtype="html")
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_user, recipients, msg.as_string())
+            server.sendmail(smtp_user, recipients, msg.as_bytes().decode("utf-8", errors="replace"))
 
         return {
             "success": True,
@@ -166,15 +167,9 @@ def send_crop_alert(
 
 
 def check_and_alert(analysis_data: dict, user: dict, admin_email: str = None) -> dict:
-    """
-    Check analysis results and send alert if crop is stressed or diseased.
-    Called automatically after running full analysis.
-    """
-    pred = analysis_data.get("crop_stress", {}).get("prediction", "")
-    if pred in ("Stressed", "Diseased"):
-        return send_crop_alert(
-            analysis_data=analysis_data,
-            user_email=user.get("email", ""),
-            admin_email=admin_email,
-        )
-    return {"success": False, "message": f"No alert needed (status: {pred})"}
+    """Send an email report for any crop status (Healthy, Stressed, or Diseased)."""
+    return send_crop_alert(
+        analysis_data=analysis_data,
+        user_email=user.get("email", ""),
+        admin_email=admin_email,
+    )
