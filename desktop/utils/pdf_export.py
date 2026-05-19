@@ -118,6 +118,24 @@ _UR = {
     "no_bands":         "کوئی بینڈ تصاویر دستیاب نہیں۔",
     # footer
     "footer":           "AgroSense — SMIU فائنل ایئر پروجیکٹ 2025–2026 · سینٹینل-2 تصاویر گوگل ارتھ انجن · ML ماڈلز پاکستانی زرعی ڈیٹا · صرف رہنمائی کے لیے",
+    # smart farming section
+    "sec8":           "اسمارٹ فارمنگ سفارشات",
+    "sf_alerts":      "موسمی انتباہات",
+    "sf_planting":    "کاشت کاری کی سفارش",
+    "sf_weekly":      "ہفتہ وار موسمی خلاصہ",
+    "sf_suitability": "مناسبیت",
+    "sf_risk":        "خطرے کی سطح",
+    "sf_ideal_date":  "بہترین تاریخ",
+    "sf_water_req":   "پانی کی ضرورت",
+    "sf_no_alerts":   "اس ہفتے کوئی موسمی انتباہ نہیں",
+    "sf_avg_temp":    "اوسط درجہ حرارت",
+    "sf_total_rain":  "کل بارش",
+    "sf_avg_humidity":"اوسط نمی",
+    "sf_avg_wind":    "اوسط ہوا",
+    "sf_type":        "قسم",
+    "sf_severity":    "شدت",
+    "sf_alert_title": "انتباہ",
+    "sf_action":      "تجویز کردہ عمل",
     # ndvi status
     "ndvi_good":        "اچھا 🟢",
     "ndvi_mod":         "معتدل 🟡",
@@ -179,7 +197,7 @@ def _fetch_bands(fid, start, end, tok):
         return {}
 
 
-def generate_report(analysis_data, output_path, user=None, include_bands=True, language="en"):
+def generate_report(analysis_data, output_path, user=None, include_bands=True, language="en", smart_farming_data=None):
     is_ur = (language == "ur")
     if is_ur:
         _register_urdu_fonts()
@@ -254,6 +272,23 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
             "ndvi_good":     "🟢 Good",
             "ndvi_mod":      "🟡 Moderate",
             "ndvi_low":      "🔴 Low",
+            "sec8":           "8. Smart Farming Recommendations",
+            "sf_alerts":      "Weather Alerts",
+            "sf_planting":    "Planting Recommendation",
+            "sf_weekly":      "Weekly Weather Summary",
+            "sf_suitability": "Suitability Score",
+            "sf_risk":        "Risk Level",
+            "sf_ideal_date":  "Ideal Planting Date",
+            "sf_water_req":   "Water Requirement",
+            "sf_no_alerts":   "No weather alerts this week.",
+            "sf_avg_temp":    "Avg Temp",
+            "sf_total_rain":  "Total Rain",
+            "sf_avg_humidity":"Avg Humidity",
+            "sf_avg_wind":    "Avg Wind",
+            "sf_type":        "Type",
+            "sf_severity":    "Severity",
+            "sf_alert_title": "Alert",
+            "sf_action":      "Recommended Action",
         }
         return en_map.get(key, key)
 
@@ -262,6 +297,11 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
     def h2(txt):
         return P(txt, S("h2", fontSize=fs_hdr, textColor=C_GREEN,
                          fontName=fn_bold, spaceAfter=6, spaceBefore=10,
+                         alignment=align))
+
+    def h3(txt):
+        return P(txt, S("h3", fontSize=fs_body + 1, textColor=C_DARK,
+                         fontName=fn_bold, spaceAfter=4, spaceBefore=8,
                          alignment=align))
 
     doc = SimpleDocTemplate(output_path, pagesize=A4,
@@ -496,6 +536,94 @@ def generate_report(analysis_data, output_path, user=None, include_bands=True, l
         (T("confidence"), f"{vra.get('confidence', 0)*100:.0f}%"),
     ], [W*0.40, W*0.60],
         [("TEXTCOLOR", (1, 1), (1, 1), C_GREEN), ("FONTNAME", (1, 1), (1, 1), "Helvetica-Bold")]))
+
+    # ── 8. SMART FARMING ─────────────────────────────────────────────────────
+    if smart_farming_data:
+        story.append(PageBreak())
+        story.append(h2(T("sec8")))
+
+        sf_alerts  = smart_farming_data.get("alerts", [])
+        sf_plant   = smart_farming_data.get("planting_recommendation", {})
+        sf_weekly  = smart_farming_data.get("weekly_summary", {})
+
+        # 8a — Alerts
+        story.append(h3(T("sf_alerts")))
+        if sf_alerts:
+            a_hdr = [T("sf_type"), T("sf_severity"), T("sf_alert_title"), T("sf_action")]
+            a_rows = [a_hdr]
+            sev_bg = {"high": colors.HexColor("#fef2f2"),
+                      "medium": colors.HexColor("#fffbeb"),
+                      "low":   colors.HexColor("#f0fdf4")}
+            row_extras = []
+            for i, a in enumerate(sf_alerts, 1):
+                bg = sev_bg.get(a.get("severity", ""), C_WHITE)
+                row_extras.append(("BACKGROUND", (0, i), (-1, i), bg))
+                a_rows.append([
+                    a.get("type", "—").replace("_", " ").title(),
+                    a.get("severity", "—").title(),
+                    a.get("title", "—"),
+                    a.get("action", "—"),
+                ])
+            at = Table(a_rows, colWidths=[W*0.15, W*0.12, W*0.28, W*0.45])
+            at.setStyle(TableStyle([
+                ("BACKGROUND",  (0, 0), (-1, 0), C_DARK),
+                ("TEXTCOLOR",   (0, 0), (-1, 0), C_WHITE),
+                ("FONTNAME",    (0, 0), (-1, 0), fn_bold),
+                ("FONTNAME",    (0, 1), (-1, -1), fn),
+                ("FONTSIZE",    (0, 0), (-1, -1), fs_body),
+                ("GRID",        (0, 0), (-1, -1), 0.5, C_BORDER),
+                ("TOPPADDING",  (0, 0), (-1, -1), 7),
+                ("BOTTOMPADDING",(0, 0), (-1, -1), 7),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ] + row_extras))
+            story.append(at)
+        else:
+            no_a = _ur(T("sf_no_alerts")) if is_ur else T("sf_no_alerts")
+            story.append(P(no_a, S("sfna", fontSize=fs_body, fontName=fn,
+                                   textColor=C_MUTED, alignment=align)))
+        story.append(Spacer(1, 0.3*cm))
+
+        # 8b — Planting Recommendation
+        if sf_plant:
+            story.append(h3(T("sf_planting")))
+            ideal = sf_plant.get("ideal_date") or "—"
+            story.append(make_kv([
+                (T("sf_suitability"), f"{sf_plant.get('suitability_score', 0)*100:.0f}%"),
+                (T("sf_risk"),        sf_plant.get("risk_level", "—").title()),
+                (T("sf_ideal_date"),  ideal),
+                (T("sf_water_req"),   f"{sf_plant.get('water_requirement_mm', 0):.0f} mm"),
+            ], [W*0.40, W*0.60]))
+            story.append(Spacer(1, 0.3*cm))
+
+        # 8c — Weekly Weather Summary
+        if sf_weekly:
+            story.append(h3(T("sf_weekly")))
+
+            def sf_cell(lbl_key, val_str):
+                lbl = _ur(T(lbl_key)) if is_ur else T(lbl_key)
+                val = _ur(val_str) if is_ur else val_str
+                return P(
+                    f"<b>{lbl}</b><br/>"
+                    f"<font size='{'13' if is_ur else '14'}' color='#86efac'>{val}</font>",
+                    S("sfbc", fontSize=fs_body, textColor=C_WHITE, fontName=fn,
+                      leading=22, alignment=TA_CENTER))
+
+            sf_banner = Table([[
+                sf_cell("sf_avg_temp",    f"{sf_weekly.get('avg_temp', 0):.1f} °C"),
+                sf_cell("sf_total_rain",  f"{sf_weekly.get('total_rain_mm', 0):.1f} mm"),
+                sf_cell("sf_avg_humidity",f"{sf_weekly.get('avg_humidity', 0):.0f}%"),
+                sf_cell("sf_avg_wind",    f"{sf_weekly.get('avg_wind_kmh', 0):.0f} km/h"),
+            ]], colWidths=[W/4]*4)
+            sf_banner.setStyle(TableStyle([
+                ("BACKGROUND",    (0, 0), (-1, -1), C_DARK),
+                ("TOPPADDING",    (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+                ("LINEAFTER",     (0, 0), (2, -1), 0.5, colors.HexColor("#1a3a24")),
+                ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+            ]))
+            story.append(sf_banner)
+        story.append(Spacer(1, 0.4*cm))
 
     # ── 7. BAND COMPOSITES ────────────────────────────────────────────────────
     fid   = d.get("field_id")
