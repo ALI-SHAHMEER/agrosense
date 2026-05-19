@@ -244,6 +244,12 @@ class DashboardPage(QWidget):
         if not fid:
             self._sv[4].setText("—")
             return
+        # Field changed since last analysis — stale results no longer apply
+        if self._last_d and self._last_d.get("field_id") != fid:
+            self._last_d = None
+            self.pdf_btn.setEnabled(False)
+            self.alt_btn.setEnabled(False)
+            self.res_f.hide()
         w = Worker(api.get_current_weather, fid)
         self._workers.append(w)
         w.done.connect(lambda r: self._sv[4].setText(f"{r['temperature_c']:.0f} °C"))
